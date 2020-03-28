@@ -1,7 +1,6 @@
 import { NextFunction, Request, Response } from 'express';
 import axios from 'axios';
 import { URLSearchParams } from 'url';
-import { DynamoDBORM } from 'node-dynamodb-orm';
 
 const uuid = require('uuid/v4');
 const querystring = require('querystring');
@@ -12,12 +11,6 @@ const LINE_NOTIFY_BASE_URL = 'https://notify-api.line.me';
 const LINE_NOTIFY_AUTH_BASE_URL = 'https://notify-bot.line.me';
 
 lineNotifyRouter.get('/', async (req: Request, res: Response, next: NextFunction) => {
-  const accountsTable = new DynamoDBORM('accounts');
-  const accounts = await accountsTable.all().catch(err => {
-    console.log(err);
-    res.send('hello line');
-  });
-  console.log(accounts);
   res.send('hello line');
 });
 

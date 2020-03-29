@@ -52,17 +52,18 @@ lineNotifyRouter.get('/callback', async (req: Request, res: Response, next: Next
 
 lineNotifyRouter.get('/notify', async (req: Request, res: Response, next: NextFunction) => {
   const messages = new URLSearchParams();
-  messages.append('message', 'aaaa');
+  messages.append('message', 'testtest');
 
-  const response = await axios.post(LINE_NOTIFY_BASE_URL + "/api/notify", messages, {
-    headers: {
-      "Authorization": 'Bearer ',
-    }
-  }).catch(err => {
-    console.log(err);
-    res.send('error');
-  });
-  res.send(response.data);
+  const firestore = setupFireStore();
+  const docsQuery = await firestore.collection("LineNotifyUsers").get();
+  const responses = await Promise.all(docsQuery.docs.map(doc => {
+    return axios.post(LINE_NOTIFY_BASE_URL + "/api/notify", messages, {
+      headers: {
+        "Authorization": 'Bearer ' + doc.id,
+      }
+    });
+  }))
+  res.json(responses.map(response => response.data));
 });
 
 export { lineNotifyRouter };

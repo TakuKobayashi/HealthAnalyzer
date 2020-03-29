@@ -23,7 +23,11 @@ lineBotRouter.get('/push_message', async (req: Request, res: Response, next: Nex
     type: 'text',
     text: 'これはテストです'
   };
-  const result = await client.pushMessage("U624a1ccd6eecd40f4ea4723327776b8f", message)
+  const firestore = setupFireStore();
+  const docsQuery = await firestore.collection("LineUsers").get();
+  const result = await Promise.all(docsQuery.docs.map(doc => {
+    return client.pushMessage(doc.id, message)
+  }))
   console.log(result);
   res.send('hello line');
 });
@@ -40,10 +44,8 @@ lineBotRouter.post('/message', line.middleware(config), (req: Request, res: Resp
 });
 
 async function handleEvent(event): Promise<void> {
-  console.log(event);
   console.log(JSON.stringify(event));
   const firestore = setupFireStore();
-
   if (event.type === 'follow') {
     const profile = await getLineUser(event.source.userId);
     await firestore.collection("LineUsers").doc(event.source.userId).set({

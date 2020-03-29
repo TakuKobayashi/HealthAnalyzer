@@ -3375,7 +3375,7 @@ find@^0.3.0:
   dependencies:
     traverse-chain "~0.1.0"
 
-firebase@^7.12.0:
+firebase@^7.13.1:
   version "7.13.1"
   resolved "https://registry.yarnpkg.com/firebase/-/firebase-7.13.1.tgz#f9c05ef60341cf8f7796ad7b8f3181b31be6dcf5"
   integrity sha512-v4Z7Wioy/7LMC8RJn1jNlOaUqLK7bUEva+Uf+qrbtFd7hM2rWLW+0IqHZBwPrQ5tI604uHj7IlhqAZEjm38AMw==

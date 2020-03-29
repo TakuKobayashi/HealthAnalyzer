@@ -6,6 +6,7 @@ import * as express from 'express';
 
 import { lineBotRouter } from './routes/line/bot';
 import { lineNotifyRouter } from './routes/line/notify';
+import { sensorsAdminRouter } from './routes/sensors/admin';
 
 const app = express();
 const server = awsServerlessExpress.createServer(app);
@@ -16,6 +17,7 @@ app.use(cookieParser());
 
 app.use(cors({ origin: true }));
 
+app.use('/sensor/admin', sensorsAdminRouter);
 app.use('/line/bot', lineBotRouter);
 app.use('/line/notify', lineNotifyRouter);
 

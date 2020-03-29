@@ -10,6 +10,8 @@ const lineNotifyRouter = express.Router();
 const LINE_NOTIFY_BASE_URL = 'https://notify-api.line.me';
 const LINE_NOTIFY_AUTH_BASE_URL = 'https://notify-bot.line.me';
 
+const redirectUri = "https://e5f9ab85.ngrok.io/line/notify/callback";
+
 lineNotifyRouter.get('/', async (req: Request, res: Response, next: NextFunction) => {
   res.send('hello line');
 });
@@ -22,7 +24,7 @@ lineNotifyRouter.get('/auth', (req: Request, res: Response, next: NextFunction) 
     client_id: process.env.LINE_NOTIFY_CLIENT_ID,
     scope: "notify",
     state: stateString,
-    redirect_uri: req.protocol + '://' + req.hostname + "/line/notify/callback"
+    redirect_uri: redirectUri,
   }
   res.redirect(LINE_NOTIFY_AUTH_BASE_URL + "/oauth/authorize?" + querystring.stringify(lineOauthParams));
 });
@@ -33,7 +35,7 @@ lineNotifyRouter.get('/callback', async (req: Request, res: Response, next: Next
     client_id: process.env.LINE_NOTIFY_CLIENT_ID,
     client_secret: process.env.LINE_NOTIFY_CLIENT_SECRET,
     code: req.query.code,
-    redirect_uri: req.protocol + '://' + req.hostname + "/line/notify/callback"
+    redirect_uri: redirectUri,
   }
   const result = await axios.post(LINE_NOTIFY_AUTH_BASE_URL + "/oauth/token?" + querystring.stringify(lineOauthParams)).catch(err => {
     console.log(err)

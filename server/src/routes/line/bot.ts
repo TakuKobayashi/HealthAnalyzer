@@ -15,8 +15,18 @@ lineBotRouter.get('/', (req: Request, res: Response, next: NextFunction) => {
   res.send('hello line');
 });
 
+lineBotRouter.get('/push_message', async (req: Request, res: Response, next: NextFunction) => {
+  const message = {
+    type: 'text',
+    text: 'これはテストです'
+  };
+  const result = await client.pushMessage("U624a1ccd6eecd40f4ea4723327776b8f", message)
+  console.log(result);
+  res.send('hello line');
+});
+
 lineBotRouter.post('/message', line.middleware(config), (req: Request, res: Response, next: NextFunction) => {
-  console.log(req.body);
+  console.log(JSON.stringify(req.body));
   Promise
   .all(req.body.events.map(handleEvent))
   .then((result) => res.json(result))

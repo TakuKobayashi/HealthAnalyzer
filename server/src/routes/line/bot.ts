@@ -1,5 +1,8 @@
 import { NextFunction, Request, Response } from 'express';
 
+import { setupFireStore } from '../../common/firestore';
+import {Profile} from "@line/bot-sdk";
+
 const express = require('express');
 const lineBotRouter = express.Router();
 
@@ -36,17 +39,32 @@ lineBotRouter.post('/message', line.middleware(config), (req: Request, res: Resp
   });
 });
 
-function handleEvent(event) {
-  if (event.type !== 'message' || event.message.type !== 'text') {
-    // ignore non-text-message event
-    return Promise.resolve(null);
+async function handleEvent(event): Promise<void> {
+  console.log(event);
+  console.log(JSON.stringify(event));
+  const firestore = setupFireStore();
+
+  if (event.type === 'follow') {
+    const profile = await getLineUser(event.source.userId);
+    await firestore.collection("LineUsers").doc(event.source.userId).set({
+      displayName: profile.displayName,
+      pictureUrl: profile.pictureUrl,
+    });
+  } else if(event.type === 'unfollow') {
+    await firestore.collection("LineUsers").doc(event.source.userId).delete();
   }
 
-  // create a echoing text message
-  const echo = { type: 'text', text: event.message.text };
+  if (event.type === 'message' || event.message.type === 'text') {
+    // create a echoing text message
+    const echo = { type: 'text', text: event.message.text };
 
-  // use reply API
-  return client.replyMessage(event.replyToken, echo);
+    // use reply API
+    await client.replyMessage(event.replyToken, echo);
+  }
+}
+
+async function getLineUser(userId: string): Promise<Profile> {
+  return client.getProfile(userId);
 }
 
 export { lineBotRouter };

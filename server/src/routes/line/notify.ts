@@ -2,6 +2,8 @@ import { NextFunction, Request, Response } from 'express';
 import axios from 'axios';
 import { URLSearchParams } from 'url';
 
+import { setupFireStore } from '../../common/firestore';
+
 const uuid = require('uuid/v4');
 const querystring = require('querystring');
 const express = require('express');
@@ -41,6 +43,10 @@ lineNotifyRouter.get('/callback', async (req: Request, res: Response, next: Next
     console.log(err)
     res.redirect("/");
   })
+  const firestore = setupFireStore();
+  await firestore.collection("LineNotifyUsers").doc(result.data.access_token).set({
+    created_at: new Date(),
+  });
   res.json(result.data);
 });
 

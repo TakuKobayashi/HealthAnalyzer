@@ -1,7 +1,7 @@
 import { NextFunction, Request, Response } from 'express';
 
 import { setupFireStore } from '../../common/firestore';
-import {Profile} from "@line/bot-sdk";
+import { Profile } from '@line/bot-sdk';
 
 const express = require('express');
 const lineBotRouter = express.Router();
@@ -21,26 +21,27 @@ lineBotRouter.get('/', (req: Request, res: Response, next: NextFunction) => {
 lineBotRouter.get('/push_message', async (req: Request, res: Response, next: NextFunction) => {
   const message = {
     type: 'text',
-    text: 'これはテストです'
+    text: 'これはテストです',
   };
   const firestore = setupFireStore();
-  const docsQuery = await firestore.collection("LineUsers").get();
-  const result = await Promise.all(docsQuery.docs.map(doc => {
-    return client.pushMessage(doc.id, message)
-  }))
+  const docsQuery = await firestore.collection('LineUsers').get();
+  const result = await Promise.all(
+    docsQuery.docs.map((doc) => {
+      return client.pushMessage(doc.id, message);
+    }),
+  );
   console.log(result);
   res.send('hello line');
 });
 
 lineBotRouter.post('/message', line.middleware(config), (req: Request, res: Response, next: NextFunction) => {
   console.log(JSON.stringify(req.body));
-  Promise
-  .all(req.body.events.map(handleEvent))
-  .then((result) => res.json(result))
-  .catch((err) => {
-    console.error(err);
-    res.status(200).end();
-  });
+  Promise.all(req.body.events.map(handleEvent))
+    .then((result) => res.json(result))
+    .catch((err) => {
+      console.error(err);
+      res.status(200).end();
+    });
 });
 
 async function handleEvent(event): Promise<void> {
@@ -48,12 +49,12 @@ async function handleEvent(event): Promise<void> {
   const firestore = setupFireStore();
   if (event.type === 'follow') {
     const profile = await getLineUser(event.source.userId);
-    await firestore.collection("LineUsers").doc(event.source.userId).set({
+    await firestore.collection('LineUsers').doc(event.source.userId).set({
       displayName: profile.displayName,
       pictureUrl: profile.pictureUrl,
     });
-  } else if(event.type === 'unfollow') {
-    await firestore.collection("LineUsers").doc(event.source.userId).delete();
+  } else if (event.type === 'unfollow') {
+    await firestore.collection('LineUsers').doc(event.source.userId).delete();
   }
 
   if (event.type === 'message' || event.message.type === 'text') {

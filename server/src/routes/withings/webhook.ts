@@ -1,83 +1,75 @@
-import { NextFunction, Request, Response } from 'express';
 import axios, { AxiosResponse } from 'axios';
 import { stringify, stringifyUrl, parse } from 'query-string';
 import { createHmac } from 'crypto';
 import { RequestTokenSignatureBasic } from '../../interfaces/withings';
-const { getCurrentInvoke } = require('@vendia/serverless-express');
 
-const express = require('express');
-const withingsRouter = express.Router();
-
-withingsRouter.get('/', async (req: Request, res: Response, next: NextFunction) => {
-  res.json({ message: 'hello' });
-});
-
-withingsRouter.get('/register', async (req: Request, res: Response, next: NextFunction) => {
-  if (!req.query.accesstoken && !req.query.refreshtoken) {
-    res.send('accesstokenかrefreshtokenをクエリにいれてください...');
-    return;
-  }
-  let accessToken = req.query.accesstoken;
-  if (req.query.refreshtoken) {
-    const tokenRes = await requestRefreshAccessToken(req.query.refreshtoken.toString());
-    accessToken = tokenRes.data.body.access_token;
-  }
-
-  const webhookUrl = getWebhookUrl(req);
-  const basicSignature: RequestTokenSignatureBasic = await constructNonceSignature('subscribe');
-  const requestParams = {
-    callbackurl: webhookUrl,
-    // aapli is see this: https://developer.withings.com/developer-guide/v3/data-api/keep-user-data-up-to-date/
-    appli: 1,
-    comment: req.query.comment || 'テキトーなコメント',
-    ...basicSignature,
-  };
-  const getRes = await axios.post('https://wbsapi.withings.net/notify', stringify(requestParams), {
-    headers: {
-      Authorization: ['Bearer', accessToken].join(' '),
-    },
+export async function withingsWebhookRouter(app, opts): Promise<void> {
+  app.get('/', async (req, res) => {
+    return { message: 'hello' };
   });
-  res.json(getRes.data);
-});
-
-withingsRouter.get('/registerings', async (req: Request, res: Response, next: NextFunction) => {
-  if (!req.query.accesstoken && !req.query.refreshtoken) {
-    res.send('accesstokenかrefreshtokenをクエリにいれてください...');
-    return;
-  }
-  let accessToken = req.query.accesstoken;
-  if (req.query.refreshtoken) {
-    const tokenRes = await requestRefreshAccessToken(req.query.refreshtoken.toString());
-    accessToken = tokenRes.data.body.access_token;
-  }
-
-  const requestParams = {
-    action: 'list',
-  };
-  const getRes = await axios.post('https://wbsapi.withings.net/notify', stringify(requestParams), {
-    headers: {
-      Authorization: ['Bearer', accessToken].join(' '),
-    },
+  app.get('/register', async (req, res) => {
+    if (!req.query.accesstoken && !req.query.refreshtoken) {
+      res.send('accesstokenかrefreshtokenをクエリにいれてください...');
+      return;
+    }
+    let accessToken = req.query.accesstoken;
+    if (req.query.refreshtoken) {
+      const tokenRes = await requestRefreshAccessToken(req.query.refreshtoken.toString());
+      accessToken = tokenRes.data.body.access_token;
+    }
+    const webhookUrl = getWebhookUrl(req);
+    const basicSignature: RequestTokenSignatureBasic = await constructNonceSignature('subscribe');
+    const requestParams = {
+      callbackurl: webhookUrl,
+      // aapli is see this: https://developer.withings.com/developer-guide/v3/data-api/keep-user-data-up-to-date/
+      appli: 1,
+      comment: req.query.comment || 'テキトーなコメント',
+      ...basicSignature,
+    };
+    const getRes = await axios.post('https://wbsapi.withings.net/notify', stringify(requestParams), {
+      headers: {
+        Authorization: ['Bearer', accessToken].join(' '),
+      },
+    });
+    return getRes.data;
   });
-  //{ status: 0, body: { profiles: [] } }
-  res.json(getRes.data);
-});
-
-withingsRouter.post('/recieves', async (req: Request, res: Response, next: NextFunction) => {
-  console.log(req.body);
-  /*
-  これをparseしてこうする
-  {
-    userid: '4360293',
-    startdate: '1653097272',
-    enddate: '1653097273',
-    appli: '1'
-  }
-  */
-  const payload = parse(req.body);
-  console.log(payload);
-  res.send('OK');
-});
+  app.get('/registerings', async (req, res) => {
+    if (!req.query.accesstoken && !req.query.refreshtoken) {
+      res.send('accesstokenかrefreshtokenをクエリにいれてください...');
+      return;
+    }
+    let accessToken = req.query.accesstoken;
+    if (req.query.refreshtoken) {
+      const tokenRes = await requestRefreshAccessToken(req.query.refreshtoken.toString());
+      accessToken = tokenRes.data.body.access_token;
+    }
+    const requestParams = {
+      action: 'list',
+    };
+    const getRes = await axios.post('https://wbsapi.withings.net/notify', stringify(requestParams), {
+      headers: {
+        Authorization: ['Bearer', accessToken].join(' '),
+      },
+    });
+    //{ status: 0, body: { profiles: [] } }
+    return getRes.data;
+  });
+  app.post('/recieves', async (req, res) => {
+    console.log(req.body);
+    /*
+    これをparseしてこうする
+    {
+      userid: '4360293',
+      startdate: '1653097272',
+      enddate: '1653097273',
+      appli: '1'
+    }
+    */
+    const payload = parse(req.body);
+    console.log(payload);
+    res.send('OK');
+  })
+}
 
 async function constructNonceSignature(action: string): Promise<RequestTokenSignatureBasic> {
   const nonce = await requestNonse();
@@ -119,10 +111,7 @@ async function requestRefreshAccessToken(refresh_token: string): Promise<AxiosRe
   return axios.post('https://wbsapi.withings.net/v2/oauth2', stringify(requestTokenObj));
 }
 
-function getWebhookUrl(req: Request): string {
-  const currentInvoke = getCurrentInvoke();
-  const currentBaseUrl = [req.protocol + '://' + req.get('host'), currentInvoke.event.requestContext.stage].join('/');
+function getWebhookUrl(req): string {
+  const currentBaseUrl = [req.protocol + '://' + req.hostname, req.awsLambda.event.requestContext.stage].join('/');
   return currentBaseUrl + '/platforms/withings/webhook';
 }
-
-export { withingsRouter };

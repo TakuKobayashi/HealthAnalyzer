@@ -1,24 +1,17 @@
-import serverlessExpress from '@vendia/serverless-express';
-import express from 'express';
-import bodyParser from 'body-parser';
+import awsLambdaFastify from '@fastify/aws-lambda'
+import fastify from 'fastify'
 
 import { lineBotRouter } from './routes/line/bot';
 import { lineNotifyRouter } from './routes/line/notify';
-import { sensorsAdminRouter } from './routes/sensors/admin';
 
-const app = express();
+const app = fastify();
 
-app.use(bodyParser.text({ type: '*/*' }));
-app.use(bodyParser.urlencoded({ extended: false }));
-
-app.use('/sensor/admin', sensorsAdminRouter);
-app.use('/line/bot', lineBotRouter);
-app.use('/line/notify', lineNotifyRouter);
-
-app.get('/test', (req, res, next) => {
-  res.status(200).json({
-    message: 'Hello from root!',
-  });
+app.get('/', (request, reply) => {
+  reply.send({ hello: 'world' })
 });
 
-export const handler = serverlessExpress({ app });
+
+app.register(lineBotRouter, { prefix: '/line/bot' });
+app.register(lineNotifyRouter, { prefix: '/line/notify' });
+
+export const handler = awsLambdaFastify(app);

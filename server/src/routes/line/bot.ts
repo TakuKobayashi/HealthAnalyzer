@@ -1,48 +1,41 @@
-import { NextFunction, Request, Response } from 'express';
-
 import { setupFireStore } from '../../common/firestore';
-import { Profile } from '@line/bot-sdk';
-
-const express = require('express');
-const lineBotRouter = express.Router();
+import { Client, Profile } from '@line/bot-sdk';
 
 const config = {
   channelAccessToken: process.env.LINE_BOT_CHANNEL_ACCESSTOKEN,
   channelSecret: process.env.LINE_BOT_CHANNEL_SECRET,
 };
+const client = new Client(config);
 
-const line = require('@line/bot-sdk');
-const client = new line.Client(config);
-
-lineBotRouter.get('/', (req: Request, res: Response, next: NextFunction) => {
-  res.send('hello line');
-});
-
-lineBotRouter.get('/push_message', async (req: Request, res: Response, next: NextFunction) => {
-  const message = {
-    type: 'text',
-    text: 'これはテストです',
-  };
-  const firestore = setupFireStore();
-  const docsQuery = await firestore.collection('LineUsers').get();
-  const result = await Promise.all(
-    docsQuery.docs.map((doc) => {
-      return client.pushMessage(doc.id, message);
-    }),
-  );
-  console.log(result);
-  res.send('hello line');
-});
-
-lineBotRouter.post('/message', line.middleware(config), (req: Request, res: Response, next: NextFunction) => {
-  console.log(JSON.stringify(req.body));
-  Promise.all(req.body.events.map(handleEvent))
-    .then((result) => res.json(result))
-    .catch((err) => {
-      console.error(err);
-      res.status(200).end();
-    });
-});
+export async function lineBotRouter(app, opts): Promise<void> {
+  app.get('/', async (req, res) => {
+    res.send('hello line');
+  });
+  app.get('/push_message', async (req, res) => {
+    const message = {
+      type: 'text',
+      text: 'これはテストです',
+    };
+    const firestore = setupFireStore();
+    const docsQuery = await firestore.collection('LineUsers').get();
+    const result = await Promise.all(
+      docsQuery.docs.map((doc) => {
+        return client.pushMessage(doc.id, message);
+      }),
+    );
+    console.log(result);
+    return 'hello line';
+  });
+  app.post('/message', async (req, res) => {
+    console.log(JSON.stringify(req.body));
+    Promise.all(req.body.events.map(handleEvent))
+      .then((result) => res.json(result))
+      .catch((err) => {
+        console.error(err);
+        res.status(200).end();
+      });
+  });
+}
 
 async function handleEvent(event): Promise<void> {
   console.log(JSON.stringify(event));
@@ -69,5 +62,3 @@ async function handleEvent(event): Promise<void> {
 async function getLineUser(userId: string): Promise<Profile> {
   return client.getProfile(userId);
 }
-
-export { lineBotRouter };

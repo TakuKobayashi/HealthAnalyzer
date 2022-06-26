@@ -1,51 +1,46 @@
-import { NextFunction, Request, Response } from 'express';
 import axios, { AxiosResponse } from 'axios';
 import { stringify, stringifyUrl, parse } from 'query-string';
 import { createHmac } from 'crypto';
 import { RequestTokenSignatureBasic } from '../../interfaces/withings';
-const { getCurrentInvoke } = require('@vendia/serverless-express');
 
-const express = require('express');
-const withingsRouter = express.Router();
-
-withingsRouter.get('/', async (req: Request, res: Response, next: NextFunction) => {
-  res.json({ message: 'hello' });
-});
-
-withingsRouter.get('/login', (req: Request, res: Response, next: NextFunction) => {
-  // See this: https://developer.withings.com/api-reference#operation/oauth2-authorize
-  const authorizeQueryObj = {
-    response_type: 'code',
-    client_id: process.env.WITHINGS_API_CLIENT_ID,
-    state: 'foobar',
-    scope: ['user.activity', 'user.metrics'].join(','),
-    redirect_uri: getCallbackUrl(req),
-  };
-  res.redirect(stringifyUrl({ url: 'https://account.withings.com/oauth2_user/authorize2', query: authorizeQueryObj }));
-});
-
-withingsRouter.get('/callback', async (req: Request, res: Response, next: NextFunction) => {
-  if (!req.query.code) {
-    res.send('callback error');
-    return;
-  }
-  const oauthRes = await requestGetAccessToken(req);
-  // このような形で返ってくる
-  /* {
-    "status":0,
-    "body":{
-      "userid":"...",
-      "access_token":"...",
-      "refresh_token":"...",
-      "scope":"user.activity,user.metrics",
-      "expires_in":10800,
-      "token_type":"Bearer"
+export async function withingsAuthRouter(app, opts): Promise<void> {
+  app.get('/', async (req, res) => {
+    return { message: 'hello' };
+  });
+  app.get('/login', async (req, res) => {
+    // See this: https://developer.withings.com/api-reference#operation/oauth2-authorize
+    const authorizeQueryObj = {
+      response_type: 'code',
+      client_id: process.env.WITHINGS_API_CLIENT_ID,
+      state: 'foobar',
+      scope: ['user.activity', 'user.metrics'].join(','),
+      redirect_uri: getCallbackUrl(req),
+    };
+    res.redirect(stringifyUrl({ url: 'https://account.withings.com/oauth2_user/authorize2', query: authorizeQueryObj }));
+  });
+  app.post('/callback', async (req, res) => {
+    if (!req.query.code) {
+      res.send('callback error');
+      return;
     }
-  } */
-  res.json(oauthRes.data);
-});
+    const oauthRes = await requestGetAccessToken(req);
+    // このような形で返ってくる
+    /* {
+      "status":0,
+      "body":{
+        "userid":"...",
+        "access_token":"...",
+        "refresh_token":"...",
+        "scope":"user.activity,user.metrics",
+        "expires_in":10800,
+        "token_type":"Bearer"
+      }
+    } */
+    res.json(oauthRes.data);
+  });
+}
 
-async function requestGetAccessToken(req: Request): Promise<AxiosResponse<any, any>> {
+async function requestGetAccessToken(req): Promise<AxiosResponse<any, any>> {
   const basicSignature: RequestTokenSignatureBasic = await constructNonceSignature('requesttoken');
   const oauthCallbackCode: string = req.query.code.toString();
   const requestTokenObj = {
@@ -87,10 +82,7 @@ async function requestNonse(): Promise<string> {
   return nonceRes.data.body.nonce.toString();
 }
 
-function getCallbackUrl(req: Request): string {
-  const currentInvoke = getCurrentInvoke();
-  const currentBaseUrl = [req.protocol + '://' + req.get('host'), currentInvoke.event.requestContext.stage].join('/');
+function getCallbackUrl(req): string {
+  const currentBaseUrl = [req.protocol + '://' + req.hostname, req.awsLambda.event.requestContext.stage].join('/');
   return currentBaseUrl + '/platforms/withings/callback';
 }
-
-export { withingsRouter };

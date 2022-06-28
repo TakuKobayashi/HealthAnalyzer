@@ -1,8 +1,9 @@
-import axios from 'axios';
+import axios, { AxiosResponse } from 'axios';
 import { URLSearchParams } from 'url';
-import { stringify } from 'querystring'
+import { stringify } from 'querystring';
 
 import { setupFireStore } from '../../common/firestore';
+import { LineNotifyOauthTokenResponse } from '../../interfaces/line';
 
 import { v4 as uuidv4 } from 'uuid';
 
@@ -21,28 +22,34 @@ export async function lineNotifyRouter(app, opts): Promise<void> {
       client_id: process.env.LINE_NOTIFY_CLIENT_ID,
       scope: 'notify',
       state: stateString,
-      redirect_uri: currentBaseUrl + "/line/notify/callback",
+      redirect_uri: currentBaseUrl + '/line/notify/callback',
     };
     res.redirect(LINE_NOTIFY_AUTH_BASE_URL + '/oauth/authorize?' + stringify(lineOauthParams));
   });
   app.get('/callback', async (req, res) => {
     const currentBaseUrl = ['https://' + req.hostname, req.awsLambda.event.requestContext.stage].join('/');
-    if(!req.query.code){
+    if (!req.query.code) {
       res.redirect(currentBaseUrl);
-      return {}
+      return {};
     }
     const lineOauthParams = {
       grant_type: 'authorization_code',
       client_id: process.env.LINE_NOTIFY_CLIENT_ID,
       client_secret: process.env.LINE_NOTIFY_CLIENT_SECRET,
       code: req.query.code,
-      redirect_uri: currentBaseUrl + "/line/notify/callback",
+      redirect_uri: currentBaseUrl + '/line/notify/callback',
     };
-    const result = await axios.post(LINE_NOTIFY_AUTH_BASE_URL + '/oauth/token?' + stringify(lineOauthParams)).catch((err) => {
-      console.log(err);
+    const result = await axios
+      .post<LineNotifyOauthTokenResponse>(LINE_NOTIFY_AUTH_BASE_URL + '/oauth/token?' + stringify(lineOauthParams))
+      .catch((err) => {
+        console.log(err);
+      });
+    if (!result) {
       res.redirect(currentBaseUrl);
-    });
-    console.log(result)
+      return {};
+    }
+    // resultはこんな感じ
+    // {"status":200,"message":"access_token is issued","access_token":"..."}
     const firestore = setupFireStore();
     await firestore.collection('LineNotifyUsers').doc(result.data.access_token).set({
       created_at: new Date(),
@@ -58,7 +65,7 @@ export async function lineNotifyRouter(app, opts): Promise<void> {
       docsQuery.docs.map((doc) => {
         return axios.post(LINE_NOTIFY_BASE_URL + '/api/notify', messages, {
           headers: {
-            Authorization: ['Bearer', doc.id].join(" "),
+            Authorization: ['Bearer', doc.id].join(' '),
           },
         });
       }),

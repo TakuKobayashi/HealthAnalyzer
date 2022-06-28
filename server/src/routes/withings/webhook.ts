@@ -68,7 +68,7 @@ export async function withingsWebhookRouter(app, opts): Promise<void> {
     const payload = parse(req.body);
     console.log(payload);
     res.send('OK');
-  })
+  });
 }
 
 async function constructNonceSignature(action: string): Promise<RequestTokenSignatureBasic> {

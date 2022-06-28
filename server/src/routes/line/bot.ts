@@ -28,12 +28,16 @@ export async function lineBotRouter(app, opts): Promise<void> {
   });
   app.post('/message', async (req, res) => {
     console.log(req.body);
-    Promise.all(req.body.events.map(handleEvent))
-      .then((result) => res.json(result))
-      .catch((err) => {
-        console.error(err);
-        res.status(200).end();
-      });
+    const messageEvent = JSON.parse(req.body);
+    const eventReplyPromises: Promise<void>[] = [];
+    for (const event of messageEvent.events) {
+      eventReplyPromises.push(handleEvent(event));
+    }
+
+    const response = await Promise.all(eventReplyPromises).catch((err) => {
+      console.error(err);
+    });
+    return messageEvent;
   });
 }
 

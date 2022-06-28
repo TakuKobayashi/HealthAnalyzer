@@ -15,7 +15,6 @@ export async function lineNotifyRouter(app, opts): Promise<void> {
   });
   app.get('/auth', async (req, res) => {
     const stateString = uuidv4();
-    res.cookie('state', stateString);
     const currentBaseUrl = [req.protocol + '://' + req.hostname, req.awsLambda.event.requestContext.stage].join('/');
     const lineOauthParams = {
       response_type: 'code',

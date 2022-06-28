@@ -1,12 +1,16 @@
-import * as firebase from 'firebase';
+import * as admin from 'firebase-admin';
+
+import serviceAccount from '../../firebaseConfig.json';
 
 export function setupFireStore() {
-  if (firebase.apps.length <= 0) {
-    firebase.initializeApp({
-      apiKey: process.env.FIREBASE_API_KEY!,
-      authDomain: process.env.FIREBASE_AUTH_DOMAIN!,
-      projectId: process.env.FIREBASE_PROJECT_ID!,
+  initFirebase();
+  return admin.firestore();
+}
+
+function initFirebase() {
+  if (admin.apps.length <= 0) {
+    admin.initializeApp({
+      credential: admin.credential.cert(serviceAccount),
     });
   }
-  return firebase.firestore();
 }

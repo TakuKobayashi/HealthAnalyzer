@@ -15,7 +15,7 @@ export async function lineNotifyRouter(app, opts): Promise<void> {
   });
   app.get('/auth', async (req, res) => {
     const stateString = uuidv4();
-    const currentBaseUrl = [req.protocol + '://' + req.hostname, req.awsLambda.event.requestContext.stage].join('/');
+    const currentBaseUrl = ['https://' + req.hostname, req.awsLambda.event.requestContext.stage].join('/');
     const lineOauthParams = {
       response_type: 'code',
       client_id: process.env.LINE_NOTIFY_CLIENT_ID,
@@ -27,7 +27,7 @@ export async function lineNotifyRouter(app, opts): Promise<void> {
     res.redirect(LINE_NOTIFY_AUTH_BASE_URL + '/oauth/authorize?' + stringify(lineOauthParams));
   });
   app.get('/callback', async (req, res) => {
-    const currentBaseUrl = [req.protocol + '://' + req.hostname, req.awsLambda.event.requestContext.stage].join('/');
+    const currentBaseUrl = ['https://' + req.hostname, req.awsLambda.event.requestContext.stage].join('/');
     if(!req.query.code){
       res.redirect(currentBaseUrl);
       return {}

@@ -23,7 +23,6 @@ export async function lineNotifyRouter(app, opts): Promise<void> {
       state: stateString,
       redirect_uri: currentBaseUrl + "/line/notify/callback",
     };
-    console.log(currentBaseUrl)
     res.redirect(LINE_NOTIFY_AUTH_BASE_URL + '/oauth/authorize?' + stringify(lineOauthParams));
   });
   app.get('/callback', async (req, res) => {
@@ -43,6 +42,7 @@ export async function lineNotifyRouter(app, opts): Promise<void> {
       console.log(err);
       res.redirect(currentBaseUrl);
     });
+    console.log(result)
     const firestore = setupFireStore();
     await firestore.collection('LineNotifyUsers').doc(result.data.access_token).set({
       created_at: new Date(),

@@ -23,6 +23,7 @@ export async function lineNotifyRouter(app, opts): Promise<void> {
       state: stateString,
       redirect_uri: currentBaseUrl + "/line/notify/callback",
     };
+    console.log(currentBaseUrl)
     res.redirect(LINE_NOTIFY_AUTH_BASE_URL + '/oauth/authorize?' + stringify(lineOauthParams));
   });
   app.get('/callback', async (req, res) => {

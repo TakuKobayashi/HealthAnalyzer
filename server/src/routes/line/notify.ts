@@ -25,7 +25,7 @@ export async function lineNotifyRouter(app, opts): Promise<void> {
     };
     res.redirect(LINE_NOTIFY_AUTH_BASE_URL + '/oauth/authorize?' + stringify(lineOauthParams));
   });
-  app.get('/message', async (req, res) => {
+  app.get('/callback', async (req, res) => {
     const currentBaseUrl = [req.protocol + '://' + req.hostname, req.awsLambda.event.requestContext.stage].join('/');
     const lineOauthParams = {
       grant_type: 'authorization_code',

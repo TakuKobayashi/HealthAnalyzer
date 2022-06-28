@@ -29,6 +29,7 @@ export async function lineBotRouter(app, opts): Promise<void> {
   app.post('/message', async (req, res) => {
     console.log(req.body);
     const messageEvent = JSON.parse(req.body);
+    console.log("checkcheckcheck");
     const eventReplyPromises: Promise<void>[] = [];
     for (const event of messageEvent.events) {
       eventReplyPromises.push(handleEvent(event));

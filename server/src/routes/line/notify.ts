@@ -28,6 +28,10 @@ export async function lineNotifyRouter(app, opts): Promise<void> {
   });
   app.get('/callback', async (req, res) => {
     const currentBaseUrl = [req.protocol + '://' + req.hostname, req.awsLambda.event.requestContext.stage].join('/');
+    if(!req.query.code){
+      res.redirect(currentBaseUrl);
+      return {}
+    }
     const lineOauthParams = {
       grant_type: 'authorization_code',
       client_id: process.env.LINE_NOTIFY_CLIENT_ID,
@@ -37,7 +41,7 @@ export async function lineNotifyRouter(app, opts): Promise<void> {
     };
     const result = await axios.post(LINE_NOTIFY_AUTH_BASE_URL + '/oauth/token?' + stringify(lineOauthParams)).catch((err) => {
       console.log(err);
-      res.redirect('/');
+      res.redirect(currentBaseUrl);
     });
     const firestore = setupFireStore();
     await firestore.collection('LineNotifyUsers').doc(result.data.access_token).set({

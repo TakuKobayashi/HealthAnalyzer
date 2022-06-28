@@ -1,5 +1,5 @@
 import { setupFireStore } from '../../common/firestore';
-import { Client, Profile } from '@line/bot-sdk';
+import { Client, Profile, TextMessage } from '@line/bot-sdk';
 
 const config = {
   channelAccessToken: process.env.LINE_BOT_CHANNEL_ACCESSTOKEN,
@@ -28,8 +28,7 @@ export async function lineBotRouter(app, opts): Promise<void> {
   });
   app.post('/message', async (req, res) => {
     console.log(req.body);
-    const messageEvent = JSON.parse(req.body);
-    console.log("checkcheckcheck");
+    const messageEvent = req.body;
     const eventReplyPromises: Promise<void>[] = [];
     for (const event of messageEvent.events) {
       eventReplyPromises.push(handleEvent(event));
@@ -43,27 +42,23 @@ export async function lineBotRouter(app, opts): Promise<void> {
 }
 
 async function handleEvent(event): Promise<void> {
-  console.log(JSON.stringify(event));
+  console.log(event)
   const firestore = setupFireStore();
   if (event.type === 'follow') {
-    const profile = await getLineUser(event.source.userId);
+    const profile = await client.getProfile(event.source.userId);
+    console.log(profile)
     await firestore.collection('LineUsers').doc(event.source.userId).set({
       displayName: profile.displayName,
       pictureUrl: profile.pictureUrl,
     });
   } else if (event.type === 'unfollow') {
     await firestore.collection('LineUsers').doc(event.source.userId).delete();
-  }
-
-  if (event.type === 'message' || event.message.type === 'text') {
+  } else if (event.type === 'message') {
+    if (event.message.type === 'text'){}
     // create a echoing text message
-    const echo = { type: 'text', text: event.message.text };
+    const echo: TextMessage = { type: 'text', text: event.message.text };
 
     // use reply API
     await client.replyMessage(event.replyToken, echo);
   }
-}
-
-async function getLineUser(userId: string): Promise<Profile> {
-  return client.getProfile(userId);
 }

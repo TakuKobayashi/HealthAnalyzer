@@ -27,7 +27,7 @@ export async function lineBotRouter(app, opts): Promise<void> {
     return 'hello line';
   });
   app.post('/message', async (req, res) => {
-    console.log(JSON.stringify(req.body));
+    console.log(req.body);
     Promise.all(req.body.events.map(handleEvent))
       .then((result) => res.json(result))
       .catch((err) => {

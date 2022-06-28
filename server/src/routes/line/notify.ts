@@ -58,7 +58,7 @@ export async function lineNotifyRouter(app, opts): Promise<void> {
       docsQuery.docs.map((doc) => {
         return axios.post(LINE_NOTIFY_BASE_URL + '/api/notify', messages, {
           headers: {
-            Authorization: 'Bearer ' + doc.id,
+            Authorization: ['Bearer', doc.id].join(" "),
           },
         });
       }),

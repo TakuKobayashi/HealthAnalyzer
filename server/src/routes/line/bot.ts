@@ -1,14 +1,7 @@
 import { setupFireStore } from '../../common/firestore';
-import { Client, TextMessage } from '@line/bot-sdk';
+import { TextMessage } from '@line/bot-sdk';
 import { lineBotRichmenuRouter } from './extends/richmenu';
-
-const lineUsersCollectionName = 'line_users';
-
-const config = {
-  channelAccessToken: process.env.LINE_BOT_CHANNEL_ACCESSTOKEN,
-  channelSecret: process.env.LINE_BOT_CHANNEL_SECRET,
-};
-const client = new Client(config);
+import { lineBotClient, lineUsersCollectionName } from '../../types/line';
 
 export async function lineBotRouter(app, opts): Promise<void> {
   app.get('/', async (req, res) => {
@@ -23,7 +16,7 @@ export async function lineBotRouter(app, opts): Promise<void> {
     const docsQuery = await firestore.collection(lineUsersCollectionName).get();
     const result = await Promise.all(
       docsQuery.docs.map((doc) => {
-        return client.pushMessage(doc.id, message);
+        return lineBotClient.pushMessage(doc.id, message);
       }),
     );
     console.log(result);
@@ -49,7 +42,7 @@ async function handleEvent(event): Promise<void> {
   console.log(event);
   const firestore = setupFireStore();
   if (event.type === 'follow') {
-    const profile = await client.getProfile(event.source.userId);
+    const profile = await lineBotClient.getProfile(event.source.userId);
     console.log(profile);
     await firestore.collection(lineUsersCollectionName).doc(event.source.userId).set({
       displayName: profile.displayName,
@@ -64,6 +57,6 @@ async function handleEvent(event): Promise<void> {
     const echo: TextMessage = { type: 'text', text: event.message.text };
 
     // use reply API
-    await client.replyMessage(event.replyToken, echo);
+    await lineBotClient.replyMessage(event.replyToken, echo);
   }
 }

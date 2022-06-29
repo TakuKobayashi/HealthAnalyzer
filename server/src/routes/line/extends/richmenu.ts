@@ -1,15 +1,7 @@
 import { setupFireStore } from '../../../common/firestore';
-import { Client, RichMenu } from '@line/bot-sdk';
+import { lineBotClient, lineUsersCollectionName, lineRichmenusCollectionName } from '../../../types/line';
+import { RichMenu } from '@line/bot-sdk';
 import axios from 'axios';
-
-const lineUsersCollectionName = 'line_users';
-const lineRichmenusCollectionName = 'line_richmenus';
-
-const config = {
-  channelAccessToken: process.env.LINE_BOT_CHANNEL_ACCESSTOKEN,
-  channelSecret: process.env.LINE_BOT_CHANNEL_SECRET,
-};
-const client = new Client(config);
 
 export async function lineBotRichmenuRouter(app, opts): Promise<void> {
   app.get('/users/link', async (req, res) => {
@@ -19,7 +11,7 @@ export async function lineBotRichmenuRouter(app, opts): Promise<void> {
     console.log(userId);
     console.log(rechmenuId);
     const firestore = setupFireStore();
-    const result = await client.linkRichMenuToUser(userId, rechmenuId);
+    const result = await lineBotClient.linkRichMenuToUser(userId, rechmenuId);
     console.log(result);
     const userDoc = firestore.collection(lineUsersCollectionName).doc(userId);
     const userData = await userDoc.get();
@@ -43,7 +35,7 @@ export async function lineBotRichmenuRouter(app, opts): Promise<void> {
     console.log(req.query);
     console.log(userId);
     const firestore = setupFireStore();
-    const result = await client.unlinkRichMenuFromUser(userId);
+    const result = await lineBotClient.unlinkRichMenuFromUser(userId);
     console.log(result);
     const userDoc = firestore.collection(lineUsersCollectionName).doc(userId);
     const userData = await userDoc.get();
@@ -62,17 +54,17 @@ export async function lineBotRichmenuRouter(app, opts): Promise<void> {
     const currentDoc = firestore.collection(lineRichmenusCollectionName).doc(richmenuId);
     const currentData = await currentDoc.get();
     await currentDoc.set({ ...currentData.data(), image_url: imageUrl });
-    const richMenuRes = await client.setRichMenuImage(richmenuId, Buffer.from(imageRes.data, 'binary'));
+    const richMenuRes = await lineBotClient.setRichMenuImage(richmenuId, Buffer.from(imageRes.data, 'binary'));
     return richMenuRes;
   });
   app.get('/image/get', async (req, res) => {
     const richmenuId = req.query.richmenu_id;
-    const richMenuRes = await client.getRichMenuImage(richmenuId);
+    const richMenuRes = await lineBotClient.getRichMenuImage(richmenuId);
     return richMenuRes;
   });
   app.get('/list', async (req, res) => {
     const firestore = setupFireStore();
-    const richMenus = await client.getRichMenuList();
+    const richMenus = await lineBotClient.getRichMenuList();
     const setFirestores: Promise<FirebaseFirestore.WriteResult>[] = [];
     for (const richMenu of richMenus) {
       const currentDoc = firestore.collection(lineRichmenusCollectionName).doc(richMenu.richMenuId);
@@ -84,7 +76,7 @@ export async function lineBotRichmenuRouter(app, opts): Promise<void> {
   });
   app.get('/delete', async (req, res) => {
     const rechmenuId = req.query.richmenu_id;
-    await client.deleteRichMenu(rechmenuId);
+    await lineBotClient.deleteRichMenu(rechmenuId);
     const firestore = setupFireStore();
     await firestore.collection(lineRichmenusCollectionName).doc(rechmenuId).delete();
     return '';
@@ -119,7 +111,7 @@ export async function lineBotRichmenuRouter(app, opts): Promise<void> {
       ],
     };
     const firestore = setupFireStore();
-    const richmenuId = await client.createRichMenu(richmenu);
+    const richmenuId = await lineBotClient.createRichMenu(richmenu);
     await firestore.collection(lineRichmenusCollectionName).doc(richmenuId).set(menuSize);
     return richmenuId;
   });

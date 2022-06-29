@@ -1,7 +1,8 @@
 import { setupFireStore } from '../../common/firestore';
-import { TextMessage } from '@line/bot-sdk';
+import { TextMessage, ImageMessage } from '@line/bot-sdk';
 import { lineBotRichmenuRouter } from './extends/richmenu';
 import { lineBotClient, lineUsersCollectionName } from '../../types/line';
+import fs from 'fs'
 
 export async function lineBotRouter(app, opts): Promise<void> {
   app.get('/', async (req, res) => {
@@ -52,11 +53,13 @@ async function handleEvent(event): Promise<void> {
     await firestore.collection(lineUsersCollectionName).doc(event.source.userId).delete();
   } else if (event.type === 'message') {
     if (event.message.type === 'text') {
+      const echo: TextMessage = { type: 'text', text: event.message.text };
+      await lineBotClient.replyMessage(event.replyToken, echo);
+    } else if (event.message.type === 'image') {
+      const content = await lineBotClient.getMessageContent(event.message.id)
+      content.pipe(fs.createWriteStream(event.message.id + ".jpg"))
+      const echo: TextMessage = { type: 'text', text: event.message.id + ".jpg image save complete" };
+      await lineBotClient.replyMessage(event.replyToken, echo);
     }
-    // create a echoing text message
-    const echo: TextMessage = { type: 'text', text: event.message.text };
-
-    // use reply API
-    await lineBotClient.replyMessage(event.replyToken, echo);
   }
 }

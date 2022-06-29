@@ -1,8 +1,8 @@
 import { setupFireStore } from '../../common/firestore';
-import { TextMessage, ImageMessage } from '@line/bot-sdk';
+import { TextMessage, LocationMessage } from '@line/bot-sdk';
 import { lineBotRichmenuRouter } from './extends/richmenu';
 import { lineBotClient, lineUsersCollectionName } from '../../types/line';
-import fs from 'fs'
+import fs from 'fs';
 
 export async function lineBotRouter(app, opts): Promise<void> {
   app.get('/', async (req, res) => {
@@ -56,9 +56,18 @@ async function handleEvent(event): Promise<void> {
       const echo: TextMessage = { type: 'text', text: event.message.text };
       await lineBotClient.replyMessage(event.replyToken, echo);
     } else if (event.message.type === 'image') {
-      const content = await lineBotClient.getMessageContent(event.message.id)
-      content.pipe(fs.createWriteStream(event.message.id + ".jpg"))
-      const echo: TextMessage = { type: 'text', text: event.message.id + ".jpg image save complete" };
+      const content = await lineBotClient.getMessageContent(event.message.id);
+      content.pipe(fs.createWriteStream(event.message.id + '.jpg'));
+      const echo: TextMessage = { type: 'text', text: event.message.id + '.jpg image save complete' };
+      await lineBotClient.replyMessage(event.replyToken, echo);
+    } else if (event.message.type === 'location') {
+      const echo: LocationMessage = {
+        type: 'location',
+        title: event.message.address,
+        address: event.message.address,
+        latitude: event.message.latitude,
+        longitude: event.message.longitude,
+      };
       await lineBotClient.replyMessage(event.replyToken, echo);
     }
   }

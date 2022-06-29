@@ -22,6 +22,7 @@ export async function withingsAuthRouter(app, opts): Promise<void> {
       scope: ['user.activity', 'user.metrics'].join(','),
       redirect_uri: getCallbackUrl(req),
     };
+    console.log(authorizeQueryObj);
     res.redirect(stringifyUrl({ url: 'https://account.withings.com/oauth2_user/authorize2', query: authorizeQueryObj }));
   });
   app.post('/callback', async (req, res) => {
@@ -57,6 +58,7 @@ async function requestGetAccessToken(req): Promise<AxiosResponse<any, any>> {
     client_secret: process.env.WITHINGS_API_SECRET,
     ...basicSignature,
   };
+  console.log(requestTokenObj);
   return axios.post('https://wbsapi.withings.net/v2/oauth2', stringify(requestTokenObj));
 }
 

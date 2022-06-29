@@ -6,43 +6,27 @@ import axios from 'axios';
 export async function lineBotRichmenuRouter(app, opts): Promise<void> {
   app.get('/users/link', async (req, res) => {
     const userId = req.query.user_id;
-    const rechmenuId = req.query.rechmenu_id;
-    console.log(req.query);
-    console.log(userId);
-    console.log(rechmenuId);
+    const richmenuId = req.query.richmenu_id;
+    const linkRichMenuToUser = await lineBotClient.linkRichMenuToUser(userId, richmenuId);
     const firestore = setupFireStore();
-    const result = await lineBotClient.linkRichMenuToUser(userId, rechmenuId);
-    console.log(result);
     const userDoc = firestore.collection(lineUsersCollectionName).doc(userId);
     const userData = await userDoc.get();
     await userDoc.set({
       ...userData.data(),
-      linked_richmenu_id: rechmenuId,
+      linked_richmenu_id: richmenuId,
+      linked_line_request_id: linkRichMenuToUser["x-line-request-id"],
     });
-    //    const userDoc = await firestore.collection(lineUsersCollectionName).doc(userId).get()
-    console.log(userDoc);
-    /*
-        const lichMenuDocs = await firestore.collection('line_richmenus').get();
-        for(const doc of lichMenuDocs.docs){
-          console.log(doc.id)
-          console.log(doc.data())
-        }
-        */
-    return result;
+    return linkRichMenuToUser;
   });
   app.get('/users/unlink', async (req, res) => {
     const userId = req.query.user_id;
-    console.log(req.query);
-    console.log(userId);
     const firestore = setupFireStore();
     const result = await lineBotClient.unlinkRichMenuFromUser(userId);
-    console.log(result);
     const userDoc = firestore.collection(lineUsersCollectionName).doc(userId);
     const userData = await userDoc.get();
     const userDataObj = userData.data();
     delete userDataObj.linked_richmenu_id;
     await userDoc.set(userDataObj);
-    console.log(userDoc);
     return result;
   });
   app.get('/image/set', async (req, res) => {

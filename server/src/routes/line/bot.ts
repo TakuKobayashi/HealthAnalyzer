@@ -1,5 +1,5 @@
 import { setupFireStore } from '../../common/firestore';
-import { TextMessage, LocationMessage } from '@line/bot-sdk';
+import { TextMessage, LocationMessage, StickerMessage } from '@line/bot-sdk';
 import { lineBotRichmenuRouter } from './extends/richmenu';
 import { lineBotClient, lineUsersCollectionName } from '../../types/line';
 import fs from 'fs';
@@ -68,6 +68,19 @@ async function handleEvent(event): Promise<void> {
         latitude: event.message.latitude,
         longitude: event.message.longitude,
       };
+      await lineBotClient.replyMessage(event.replyToken, echo);
+    } else if (event.message.type === 'audio') {
+      const content = await lineBotClient.getMessageContent(event.message.id);
+      content.pipe(fs.createWriteStream(event.message.id + '.wav'));
+      const echo: TextMessage = { type: 'text', text: event.message.id + '.wav audio save complete' };
+      await lineBotClient.replyMessage(event.replyToken, echo);
+    } else if (event.message.type === 'sticker') {
+      const echo: TextMessage = { type: 'text', text: 'sticker message received' };
+      await lineBotClient.replyMessage(event.replyToken, echo);
+    } else if (event.message.type === 'video') {
+      const content = await lineBotClient.getMessageContent(event.message.id);
+      content.pipe(fs.createWriteStream(event.message.id + '.mp4'));
+      const echo: TextMessage = { type: 'text', text: event.message.id + '.mp4 video save complete' };
       await lineBotClient.replyMessage(event.replyToken, echo);
     }
   }

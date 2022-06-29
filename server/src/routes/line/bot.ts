@@ -1,5 +1,6 @@
 import { setupFireStore } from '../../common/firestore';
-import { TextMessage, LocationMessage, StickerMessage } from '@line/bot-sdk';
+import { TextMessage, LocationMessage, TemplateMessage } from '@line/bot-sdk';
+import { parse, stringify } from 'querystring';
 import { lineBotRichmenuRouter } from './extends/richmenu';
 import { lineBotClient, lineUsersCollectionName } from '../../types/line';
 import fs from 'fs';
@@ -24,16 +25,13 @@ export async function lineBotRouter(app, opts): Promise<void> {
     return 'hello line';
   });
   app.post('/message', async (req, res) => {
-    console.log(req.body);
     const messageEvent = req.body;
     const eventReplyPromises: Promise<void>[] = [];
     for (const event of messageEvent.events) {
       eventReplyPromises.push(handleEvent(event));
     }
 
-    const response = await Promise.all(eventReplyPromises).catch((err) => {
-      console.error(err);
-    });
+    await Promise.all(eventReplyPromises);
     return messageEvent;
   });
   app.register(lineBotRichmenuRouter, { prefix: '/richmenu' });
@@ -51,6 +49,30 @@ async function handleEvent(event): Promise<void> {
     });
   } else if (event.type === 'unfollow') {
     await firestore.collection(lineUsersCollectionName).doc(event.source.userId).delete();
+  } else if (event.type === 'postback') {
+    const postbackDataObj = parse(event.postback.data);
+    if (postbackDataObj.action === 'withings_link') {
+      const postbackUrlObj = {
+        line_user_id: event.source.userId,
+      };
+      const echo: TemplateMessage = {
+        type: 'template',
+        altText: 'Connect to withings',
+        template: {
+          type: 'buttons',
+          text: '以下のボタンを押してWithingsと連携してください',
+          actions: [
+            {
+              type: 'uri',
+              label: 'Withingsと連携',
+              uri:
+                'https://y4t3smbhh2.execute-api.ap-northeast-1.amazonaws.com/production//withings/auth/login?' + stringify(postbackUrlObj),
+            },
+          ],
+        },
+      };
+      await lineBotClient.replyMessage(event.replyToken, echo);
+    }
   } else if (event.type === 'message') {
     if (event.message.type === 'text') {
       const echo: TextMessage = { type: 'text', text: event.message.text };

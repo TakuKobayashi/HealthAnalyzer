@@ -60,10 +60,10 @@ export async function lineBotRichmenuRouter(app, opts): Promise<void> {
   });
   app.get('/:richmenu_id/delete', async (req, res) => {
     const rechmenuId = req.params.richmenu_id;
-    await lineBotClient.deleteRichMenu(rechmenuId);
+    const deleteRichMenuResult = await lineBotClient.deleteRichMenu(rechmenuId);
     const firestore = setupFireStore();
     await firestore.collection(lineRichmenusCollectionName).doc(rechmenuId).delete();
-    return '';
+    return deleteRichMenuResult;
   });
   app.get('/create', async (req, res) => {
     const menuSize = {
@@ -88,8 +88,9 @@ export async function lineBotRichmenuRouter(app, opts): Promise<void> {
             height: menuSize.height,
           },
           action: {
-            type: 'uri',
-            uri: 'https://y4t3smbhh2.execute-api.ap-northeast-1.amazonaws.com/production//withings/auth/login',
+            label: 'withingsLink',
+            data: 'action=withings_link',
+            type: 'postback',
           },
         },
       ],

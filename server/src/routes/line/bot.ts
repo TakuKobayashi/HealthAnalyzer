@@ -67,7 +67,7 @@ async function handleEvent(event): Promise<void> {
               type: 'uri',
               label: 'Withingsと連携',
               uri:
-                'https://y4t3smbhh2.execute-api.ap-northeast-1.amazonaws.com/production//withings/auth/login?' + stringify(postbackUrlObj),
+                'https://y4t3smbhh2.execute-api.ap-northeast-1.amazonaws.com/production/withings/auth/login?' + stringify(postbackUrlObj),
             },
           ],
         },

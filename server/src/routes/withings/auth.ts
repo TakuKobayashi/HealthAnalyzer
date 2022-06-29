@@ -84,5 +84,5 @@ async function requestNonse(): Promise<string> {
 
 function getCallbackUrl(req): string {
   const currentBaseUrl = [req.protocol + '://' + req.hostname, req.awsLambda.event.requestContext.stage].join('/');
-  return currentBaseUrl + '/platforms/withings/callback';
+  return currentBaseUrl + '/withings/auth/callback';
 }

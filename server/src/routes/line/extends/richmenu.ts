@@ -1,7 +1,9 @@
 import { setupFireStore } from '../../../common/firestore';
 import { lineBotClient, lineUsersCollectionName, lineRichmenusCollectionName } from '../../../types/line';
+import { withingsLinkPostbackActionName } from '../../../types/postbacks';
 import { RichMenu } from '@line/bot-sdk';
 import axios from 'axios';
+import { stringify } from 'querystring';
 
 export async function lineBotRichmenuRouter(app, opts): Promise<void> {
   app.get('/:richmenu_id/users/:user_id/link', async (req, res) => {
@@ -89,7 +91,7 @@ export async function lineBotRichmenuRouter(app, opts): Promise<void> {
           },
           action: {
             label: 'withingsLink',
-            data: 'action=withings_link',
+            data: stringify({ action: withingsLinkPostbackActionName }),
             type: 'postback',
           },
         },

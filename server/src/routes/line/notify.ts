@@ -1,9 +1,10 @@
-import axios, { AxiosResponse } from 'axios';
+import axios from 'axios';
 import { URLSearchParams } from 'url';
 import { stringify } from 'querystring';
 
 import { setupFireStore } from '../../common/firestore';
 import { LineNotifyOauthTokenResponse } from '../../interfaces/line';
+import { lineNotifyUsersCollectionName } from '../../types/line';
 
 import { v4 as uuidv4 } from 'uuid';
 
@@ -51,7 +52,7 @@ export async function lineNotifyRouter(app, opts): Promise<void> {
     // resultはこんな感じ
     // {"status":200,"message":"access_token is issued","access_token":"..."}
     const firestore = setupFireStore();
-    await firestore.collection('LineNotifyUsers').doc(result.data.access_token).set({
+    await firestore.collection(lineNotifyUsersCollectionName).doc(result.data.access_token).set({
       created_at: new Date(),
     });
     return result.data;
@@ -60,7 +61,7 @@ export async function lineNotifyRouter(app, opts): Promise<void> {
     const messages = new URLSearchParams();
     messages.append('message', 'testtest');
     const firestore = setupFireStore();
-    const docsQuery = await firestore.collection('LineNotifyUsers').get();
+    const docsQuery = await firestore.collection(lineNotifyUsersCollectionName).get();
     const responses = await Promise.all(
       docsQuery.docs.map((doc) => {
         return axios.post(LINE_NOTIFY_BASE_URL + '/api/notify', messages, {

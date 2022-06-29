@@ -3,6 +3,7 @@ import { TextMessage, LocationMessage, TemplateMessage } from '@line/bot-sdk';
 import { parse, stringify } from 'querystring';
 import { lineBotRichmenuRouter } from './extends/richmenu';
 import { lineBotClient, lineUsersCollectionName } from '../../types/line';
+import { withingsLinkPostbackActionName } from '../../types/postbacks';
 import fs from 'fs';
 
 export async function lineBotRouter(app, opts): Promise<void> {
@@ -51,7 +52,7 @@ async function handleEvent(event): Promise<void> {
     await firestore.collection(lineUsersCollectionName).doc(event.source.userId).delete();
   } else if (event.type === 'postback') {
     const postbackDataObj = parse(event.postback.data);
-    if (postbackDataObj.action === 'withings_link') {
+    if (postbackDataObj.action === withingsLinkPostbackActionName) {
       const postbackUrlObj = {
         line_user_id: event.source.userId,
       };

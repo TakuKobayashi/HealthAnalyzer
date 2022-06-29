@@ -4,9 +4,9 @@ import { RichMenu } from '@line/bot-sdk';
 import axios from 'axios';
 
 export async function lineBotRichmenuRouter(app, opts): Promise<void> {
-  app.get('/users/link', async (req, res) => {
-    const userId = req.query.user_id;
-    const richmenuId = req.query.richmenu_id;
+  app.get('/:richmenu_id/users/:user_id/link', async (req, res) => {
+    const userId = req.params.user_id;
+    const richmenuId = req.params.richmenu_id;
     const linkRichMenuToUser = await lineBotClient.linkRichMenuToUser(userId, richmenuId);
     const firestore = setupFireStore();
     const userDoc = firestore.collection(lineUsersCollectionName).doc(userId);
@@ -14,12 +14,12 @@ export async function lineBotRichmenuRouter(app, opts): Promise<void> {
     await userDoc.set({
       ...userData.data(),
       linked_richmenu_id: richmenuId,
-      linked_line_request_id: linkRichMenuToUser["x-line-request-id"],
+      linked_line_request_id: linkRichMenuToUser['x-line-request-id'],
     });
     return linkRichMenuToUser;
   });
-  app.get('/users/unlink', async (req, res) => {
-    const userId = req.query.user_id;
+  app.get('/users/:user_id/unlink', async (req, res) => {
+    const userId = req.params.user_id;
     const firestore = setupFireStore();
     const result = await lineBotClient.unlinkRichMenuFromUser(userId);
     const userDoc = firestore.collection(lineUsersCollectionName).doc(userId);
@@ -29,8 +29,8 @@ export async function lineBotRichmenuRouter(app, opts): Promise<void> {
     await userDoc.set(userDataObj);
     return result;
   });
-  app.get('/image/set', async (req, res) => {
-    const richmenuId = req.query.richmenu_id;
+  app.get('/:richmenu_id/image/set', async (req, res) => {
+    const richmenuId = req.params.richmenu_id;
     const imageUrl =
       'https://firebasestorage.googleapis.com/v0/b/healthanalyzer-54f88.appspot.com/o/line_richmenu_images%2Funconnect_richmenu.jpg?alt=media&token=262041f0-e0be-448d-b44e-c2ab6c0bb53d';
     const imageRes = await axios.get(imageUrl, { responseType: 'arraybuffer' });
@@ -41,8 +41,8 @@ export async function lineBotRichmenuRouter(app, opts): Promise<void> {
     const richMenuRes = await lineBotClient.setRichMenuImage(richmenuId, Buffer.from(imageRes.data, 'binary'));
     return richMenuRes;
   });
-  app.get('/image/get', async (req, res) => {
-    const richmenuId = req.query.richmenu_id;
+  app.get('/:richmenu_id/image/get', async (req, res) => {
+    const richmenuId = req.params.richmenu_id;
     const richMenuRes = await lineBotClient.getRichMenuImage(richmenuId);
     return richMenuRes;
   });
@@ -58,8 +58,8 @@ export async function lineBotRichmenuRouter(app, opts): Promise<void> {
     await Promise.all(setFirestores);
     return richMenus;
   });
-  app.get('/delete', async (req, res) => {
-    const rechmenuId = req.query.richmenu_id;
+  app.get('/:richmenu_id/delete', async (req, res) => {
+    const rechmenuId = req.params.richmenu_id;
     await lineBotClient.deleteRichMenu(rechmenuId);
     const firestore = setupFireStore();
     await firestore.collection(lineRichmenusCollectionName).doc(rechmenuId).delete();

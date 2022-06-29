@@ -2,17 +2,23 @@ import axios, { AxiosResponse } from 'axios';
 import { stringify, stringifyUrl, parse } from 'query-string';
 import { createHmac } from 'crypto';
 import { RequestTokenSignatureBasic } from '../../interfaces/withings';
+import { linebotUrl } from '../../types/line';
 
 export async function withingsAuthRouter(app, opts): Promise<void> {
   app.get('/', async (req, res) => {
     return { message: 'hello' };
   });
   app.get('/login', async (req, res) => {
+    if (!req.query.line_user_id) {
+      res.redirect(linebotUrl);
+      return;
+    }
+    const lineUserId = req.query.line_user_id;
     // See this: https://developer.withings.com/api-reference#operation/oauth2-authorize
     const authorizeQueryObj = {
       response_type: 'code',
       client_id: process.env.WITHINGS_API_CLIENT_ID,
-      state: 'foobar',
+      state: lineUserId,
       scope: ['user.activity', 'user.metrics'].join(','),
       redirect_uri: getCallbackUrl(req),
     };
@@ -20,7 +26,7 @@ export async function withingsAuthRouter(app, opts): Promise<void> {
   });
   app.post('/callback', async (req, res) => {
     if (!req.query.code) {
-      res.send('callback error');
+      res.redirect(linebotUrl);
       return;
     }
     const oauthRes = await requestGetAccessToken(req);
@@ -36,7 +42,8 @@ export async function withingsAuthRouter(app, opts): Promise<void> {
         "token_type":"Bearer"
       }
     } */
-    res.json(oauthRes.data);
+    res.redirect(linebotUrl);
+    //    res.json(oauthRes.data);
   });
 }
 

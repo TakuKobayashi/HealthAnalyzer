@@ -1,7 +1,31 @@
 import axios, { AxiosResponse } from 'axios';
-import { RequestTokenSignatureBasic } from '../interfaces/withings';
+import { RequestTokenSignatureBasic, WithingsAccount } from '../interfaces/withings';
 import { stringify } from 'query-string';
 import { createHmac } from 'crypto';
+
+export class WithingsApi {
+  private withingsAccount: WithingsAccount;
+
+  constructor(account: WithingsAccount) {
+    this.withingsAccount = account;
+  }
+
+  async requestRegisterWebhook(webhookUrl: string, comment: string): Promise<AxiosResponse<any, any>> {
+    const basicSignature: RequestTokenSignatureBasic = await constructNonceSignature('subscribe');
+    const requestParams = {
+      callbackurl: webhookUrl,
+      // appli is see this: https://developer.withings.com/developer-guide/v3/data-api/keep-user-data-up-to-date/
+      appli: 1,
+      comment: comment,
+      ...basicSignature,
+    };
+    return axios.post('https://wbsapi.withings.net/notify', stringify(requestParams), {
+      headers: {
+        Authorization: ['Bearer', this.withingsAccount.access_token].join(' '),
+      },
+    });
+  }
+}
 
 export async function requestGetAccessToken(oauthCallbackCode: string, redirect_uri: string): Promise<AxiosResponse<any, any>> {
   const basicSignature: RequestTokenSignatureBasic = await constructNonceSignature('requesttoken');
@@ -13,22 +37,6 @@ export async function requestGetAccessToken(oauthCallbackCode: string, redirect_
     ...basicSignature,
   };
   return axios.post('https://wbsapi.withings.net/v2/oauth2', stringify(requestTokenObj));
-}
-
-export async function requestRegisterWebhook(webhookUrl: string, comment: string, accessToken: string): Promise<AxiosResponse<any, any>> {
-  const basicSignature: RequestTokenSignatureBasic = await constructNonceSignature('subscribe');
-  const requestParams = {
-    callbackurl: webhookUrl,
-    // appli is see this: https://developer.withings.com/developer-guide/v3/data-api/keep-user-data-up-to-date/
-    appli: 1,
-    comment: comment,
-    ...basicSignature,
-  };
-  return axios.post('https://wbsapi.withings.net/notify', stringify(requestParams), {
-    headers: {
-      Authorization: ['Bearer', accessToken].join(' '),
-    },
-  });
 }
 
 async function constructNonceSignature(action: string): Promise<RequestTokenSignatureBasic> {

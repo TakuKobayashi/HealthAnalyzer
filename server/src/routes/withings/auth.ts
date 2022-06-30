@@ -1,4 +1,5 @@
 import { stringifyUrl } from 'query-string';
+import { WithingsAccount } from 'src/interfaces/withings';
 import { setupFireStore } from '../../common/firestore';
 import { requestGetAccessToken } from '../../common/withings';
 import { linebotUrl } from '../../types/line';
@@ -49,22 +50,21 @@ export async function withingsAuthRouter(app, opts): Promise<void> {
     } */
     const nowTime = new Date().getTime();
     const oauthResultBody = oauthRes.data.body;
-    const firestore = setupFireStore();
-    const currentDoc = firestore.collection(withingsUsersCollectionName).doc(oauthRes.data.body.userid);
-    const currentData = await currentDoc.get();
-    await currentDoc.set({
-      ...currentData.data(),
+    const withingsAccount: WithingsAccount = {
       access_token: oauthResultBody.access_token,
       refresh_token: oauthResultBody.refresh_token,
       expired_at: nowTime + oauthResultBody.expires_in * 1000,
       line_user_id: req.cookies[lineUserIdCookieKeyName],
-    });
+    };
+    const firestore = setupFireStore();
+    const currentDoc = firestore.collection(withingsUsersCollectionName).doc(oauthRes.data.body.userid);
+    await currentDoc.update({ ...withingsAccount });
     res.clearCookie(lineUserIdCookieKeyName);
     res.redirect(linebotUrl);
   });
 }
 
 function getCallbackUrl(req): string {
-  const currentBaseUrl = [req.protocol + '://' + req.hostname, req.awsLambda.event.requestContext.stage].join('/');
+  const currentBaseUrl = ['https://' + req.hostname, req.awsLambda.event.requestContext.stage].join('/');
   return currentBaseUrl + '/withings/auth/callback';
 }

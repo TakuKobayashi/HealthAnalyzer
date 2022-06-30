@@ -1,6 +1,6 @@
 import axios from 'axios';
 import { URLSearchParams } from 'url';
-import { stringify } from 'querystring';
+import { stringifyUrl } from 'query-string';
 
 import { setupFireStore } from '../../common/firestore';
 import { LineNotifyOauthTokenResponse } from '../../interfaces/line';
@@ -25,7 +25,7 @@ export async function lineNotifyRouter(app, opts): Promise<void> {
       state: stateString,
       redirect_uri: currentBaseUrl + '/line/notify/callback',
     };
-    res.redirect(LINE_NOTIFY_AUTH_BASE_URL + '/oauth/authorize?' + stringify(lineOauthParams));
+    res.redirect(stringifyUrl({ url: LINE_NOTIFY_AUTH_BASE_URL + '/oauth/authorize', query: lineOauthParams }));
   });
   app.get('/callback', async (req, res) => {
     const currentBaseUrl = ['https://' + req.hostname, req.awsLambda.event.requestContext.stage].join('/');
@@ -41,7 +41,7 @@ export async function lineNotifyRouter(app, opts): Promise<void> {
       redirect_uri: currentBaseUrl + '/line/notify/callback',
     };
     const result = await axios
-      .post<LineNotifyOauthTokenResponse>(LINE_NOTIFY_AUTH_BASE_URL + '/oauth/token?' + stringify(lineOauthParams))
+      .post<LineNotifyOauthTokenResponse>(stringifyUrl({ url: LINE_NOTIFY_AUTH_BASE_URL + '/oauth/token', query: lineOauthParams }))
       .catch((err) => {
         console.log(err);
       });

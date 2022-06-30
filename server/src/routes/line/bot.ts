@@ -1,6 +1,6 @@
 import { setupFireStore } from '../../common/firestore';
 import { TextMessage, LocationMessage, TemplateMessage } from '@line/bot-sdk';
-import { parse, stringify } from 'querystring';
+import { parse, stringifyUrl } from 'query-string';
 import { lineBotRichmenuRouter } from './extends/richmenu';
 import { lineBotClient, lineUsersCollectionName } from '../../types/line';
 import { withingsLinkPostbackActionName } from '../../types/postbacks';
@@ -66,8 +66,10 @@ async function handleEvent(event): Promise<void> {
             {
               type: 'uri',
               label: 'Withingsと連携',
-              uri:
-                'https://y4t3smbhh2.execute-api.ap-northeast-1.amazonaws.com/production/withings/auth/login?' + stringify(postbackUrlObj),
+              uri: stringifyUrl({
+                url: 'https://y4t3smbhh2.execute-api.ap-northeast-1.amazonaws.com/production/withings/auth/login',
+                query: postbackUrlObj,
+              }),
             },
           ],
         },

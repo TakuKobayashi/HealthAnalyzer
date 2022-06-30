@@ -3,7 +3,7 @@ import { lineBotClient, lineUsersCollectionName, lineRichmenusCollectionName } f
 import { withingsLinkPostbackActionName } from '../../../types/postbacks';
 import { RichMenu } from '@line/bot-sdk';
 import axios from 'axios';
-import { stringify } from 'querystring';
+import { stringify } from 'query-string';
 
 export async function lineBotRichmenuRouter(app, opts): Promise<void> {
   app.get('/:richmenu_id/users/:user_id/link', async (req, res) => {

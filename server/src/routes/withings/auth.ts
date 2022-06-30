@@ -1,8 +1,12 @@
 import axios, { AxiosResponse } from 'axios';
-import { stringify, stringifyUrl, parse } from 'query-string';
+import { stringify, stringifyUrl } from 'query-string';
 import { createHmac } from 'crypto';
+import { setupFireStore } from '../../common/firestore';
 import { RequestTokenSignatureBasic } from '../../interfaces/withings';
 import { linebotUrl } from '../../types/line';
+import { withingsUsersCollectionName } from '../../types/withings';
+
+const lineUserIdCookieKeyName = 'line_user_id';
 
 export async function withingsAuthRouter(app, opts): Promise<void> {
   app.get('/', async (req, res) => {
@@ -14,6 +18,7 @@ export async function withingsAuthRouter(app, opts): Promise<void> {
       return;
     }
     const lineUserId = req.query.line_user_id;
+    res.setCookie(lineUserIdCookieKeyName, lineUserId);
     // See this: https://developer.withings.com/api-reference#operation/oauth2-authorize
     const authorizeQueryObj = {
       response_type: 'code',
@@ -42,8 +47,20 @@ export async function withingsAuthRouter(app, opts): Promise<void> {
         "token_type":"Bearer"
       }
     } */
+    const nowTime = new Date().getTime();
+    const oauthResultBody = oauthRes.data.body;
+    const firestore = setupFireStore();
+    const currentDoc = firestore.collection(withingsUsersCollectionName).doc(oauthRes.data.body.userid);
+    const currentData = await currentDoc.get();
+    await currentDoc.set({
+      ...currentData.data(),
+      access_token: oauthResultBody.access_token,
+      refresh_token: oauthResultBody.refresh_token,
+      expired_at: nowTime + oauthResultBody.expires_in * 1000,
+      line_user_id: req.cookies[lineUserIdCookieKeyName],
+    });
+    res.clearCookie(lineUserIdCookieKeyName);
     res.redirect(linebotUrl);
-    //    res.json(oauthRes.data);
   });
 }
 

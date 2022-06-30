@@ -25,6 +25,17 @@ export class WithingsApi {
       },
     });
   }
+
+  async requestRefreshAccessToken(refresh_token: string): Promise<AxiosResponse<any, any>> {
+    const basicSignature: RequestTokenSignatureBasic = await constructNonceSignature('requesttoken');
+    const requestTokenObj = {
+      grant_type: 'refresh_token',
+      refresh_token: refresh_token,
+      client_secret: process.env.WITHINGS_API_SECRET,
+      ...basicSignature,
+    };
+    return axios.post('https://wbsapi.withings.net/v2/oauth2', stringify(requestTokenObj));
+  }
 }
 
 export async function requestGetAccessToken(oauthCallbackCode: string, redirect_uri: string): Promise<AxiosResponse<any, any>> {

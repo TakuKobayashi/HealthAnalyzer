@@ -61,6 +61,7 @@ export async function withingsAuthRouter(app, opts): Promise<void> {
     await currentDoc.update({ ...withingsAccount });
     res.clearCookie(lineUserIdCookieKeyName);
     res.redirect(linebotUrl);
+    return;
   });
 }
 

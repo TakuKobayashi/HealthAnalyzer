@@ -9,7 +9,14 @@ const lineUserIdCookieKeyName = 'line_user_id';
 
 export async function withingsAuthRouter(app, opts): Promise<void> {
   app.get('/', async (req, res) => {
-    return { message: 'hello' };
+    const firestore = setupFireStore();
+    const currentDoc = firestore.collection(withingsUsersCollectionName);
+    const data = await currentDoc.get();
+    const arr = [];
+    data.forEach(d => {
+      arr.push(d.data());
+    })
+    return arr;
   });
   app.get('/login', async (req, res) => {
     if (!req.query.line_user_id) {
@@ -56,12 +63,11 @@ export async function withingsAuthRouter(app, opts): Promise<void> {
       expired_at: nowTime + oauthResultBody.expires_in * 1000,
       line_user_id: req.cookies[lineUserIdCookieKeyName],
     };
+     // firestore の保存はredirectさせたあとにしておかないとInternal server errorになっちゃう
+    res.redirect(linebotUrl);
     const firestore = setupFireStore();
     const currentDoc = firestore.collection(withingsUsersCollectionName).doc(oauthRes.data.body.userid);
-    await currentDoc.update({ ...withingsAccount });
-    res.clearCookie(lineUserIdCookieKeyName);
-    res.redirect(linebotUrl);
-    return;
+    await currentDoc.set(withingsAccount);
   });
 }
 

@@ -55,6 +55,9 @@ export async function withingsWebhookRouter(app, opts): Promise<void> {
     return mesureResponse.data;
   });
   app.post('/recieves', async (req, res) => {
+    console.log("recieved!!!!");
+    console.log(req.headers);
+    console.log(req.raw);
     console.log(req.body);
     /*
     これをparseしてこうする

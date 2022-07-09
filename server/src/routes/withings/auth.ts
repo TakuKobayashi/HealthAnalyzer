@@ -1,7 +1,7 @@
 import { stringifyUrl } from 'query-string';
 import { WithingsAccount } from 'src/interfaces/withings';
 import { setupFireStore } from '../../common/firestore';
-import { requestGetAccessToken } from '../../common/withings';
+import { requestGetAccessToken, WithingsApi } from '../../common/withings';
 import { linebotUrl } from '../../types/line';
 import { withingsUsersCollectionName } from '../../types/withings';
 
@@ -63,10 +63,13 @@ export async function withingsAuthRouter(app, opts): Promise<void> {
       expired_at: nowTime + oauthResultBody.expires_in * 1000,
       line_user_id: req.cookies[lineUserIdCookieKeyName],
     };
+    const withingsApi = new WithingsApi(withingsAccount);
+    const registedWithings = await withingsApi.requestRegisterWebhook(getWebhookUrl(req), ["LineId", withingsAccount.line_user_id, "WithingsId", oauthResultBody.userid].join(":"))
+    console.log(registedWithings.data);
      // firestore の保存はredirectさせたあとにしておかないとInternal server errorになっちゃう
     res.redirect(linebotUrl);
     const firestore = setupFireStore();
-    const currentDoc = firestore.collection(withingsUsersCollectionName).doc(oauthRes.data.body.userid);
+    const currentDoc = firestore.collection(withingsUsersCollectionName).doc(oauthResultBody.userid);
     await currentDoc.set(withingsAccount);
   });
 }
@@ -74,4 +77,9 @@ export async function withingsAuthRouter(app, opts): Promise<void> {
 function getCallbackUrl(req): string {
   const currentBaseUrl = ['https://' + req.hostname, req.awsLambda.event.requestContext.stage].join('/');
   return currentBaseUrl + '/withings/auth/callback';
+}
+
+function getWebhookUrl(req): string {
+  const currentBaseUrl = ['https://' + req.hostname, req.awsLambda.event.requestContext.stage].join('/');
+  return currentBaseUrl + '/withings/webhook/recieves';
 }

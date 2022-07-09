@@ -12,11 +12,7 @@ export async function withingsWebhookRouter(app, opts): Promise<void> {
     if (!req.query.withing_user_id) {
       return { message: 'withings_user_idを指定してください' };
     }
-    const firestore = setupFireStore();
-    const withingsUserDoc = firestore.collection(withingsUsersCollectionName).doc(req.query.withing_user_id);
-    const withingsUserAccount = await withingsUserDoc.get();
-    const withingsAccount = withingsUserAccount.data() as WithingsAccount;
-    const withingsApi = new WithingsApi(withingsAccount);
+    const withingsApi = await constructWithingsApi(req.query.withing_user_id);
     const registeredNotifyListResponse = await withingsApi.requestRegisteredNotifyList();
     return registeredNotifyListResponse.data;
   });
@@ -35,4 +31,12 @@ export async function withingsWebhookRouter(app, opts): Promise<void> {
     console.log(payload);
     res.send('OK');
   });
+}
+
+async function constructWithingsApi(withing_user_id: string): Promise<WithingsApi> {
+  const firestore = setupFireStore();
+  const withingsUserDoc = firestore.collection(withingsUsersCollectionName).doc(withing_user_id);
+  const withingsUserAccount = await withingsUserDoc.get();
+  const withingsAccount = withingsUserAccount.data() as WithingsAccount;
+  return new WithingsApi(withingsAccount);
 }

@@ -40,6 +40,8 @@ export async function withingsAuthRouter(app, opts): Promise<void> {
       res.redirect(linebotUrl);
       return;
     }
+    // firestore の保存はredirectさせたあとにしておかないとInternal server errorになっちゃう
+    res.redirect(linebotUrl);
     const oauthCallbackCode: string = req.query.code.toString();
     const redirectUrl = getCallbackUrl(req);
     const oauthRes = await requestGetAccessToken(oauthCallbackCode, redirectUrl);
@@ -55,8 +57,6 @@ export async function withingsAuthRouter(app, opts): Promise<void> {
         "token_type":"Bearer"
       }
     } */
-    // firestore の保存はredirectさせたあとにしておかないとInternal server errorになっちゃう
-    res.redirect(linebotUrl);
     const nowTime = new Date().getTime();
     const oauthResultBody = oauthRes.data.body;
     const withingsAccount: WithingsAccount = {

@@ -2,6 +2,8 @@ import axios, { AxiosResponse } from 'axios';
 import { RequestTokenSignatureBasic, WithingsAccount } from '../interfaces/withings';
 import { stringify } from 'query-string';
 import { createHmac } from 'crypto';
+import { setupFireStore } from './firestore';
+import { withingsUsersCollectionName } from '../types/withings';
 
 export class WithingsApi {
   private withingsAccount: WithingsAccount;
@@ -19,33 +21,46 @@ export class WithingsApi {
       comment: comment,
       ...basicSignature,
     };
-    return axios.post('https://wbsapi.withings.net/notify', stringify(requestParams), {
-      headers: {
-        Authorization: ['Bearer', this.withingsAccount.access_token].join(' '),
-      },
-    });
+    return this.requestApi('https://wbsapi.withings.net/notify', requestParams);
   }
 
   async requestRegisteredNotifyList(): Promise<AxiosResponse<any, any>> {
     const requestParams = {
       action: 'list',
     };
-    return axios.post('https://wbsapi.withings.net/notify', stringify(requestParams), {
+    return this.requestApi('https://wbsapi.withings.net/notify', requestParams);
+  }
+
+  async requestRefreshAccessToken(): Promise<AxiosResponse<any, any>> {
+    const basicSignature: RequestTokenSignatureBasic = await constructNonceSignature('requesttoken');
+    const requestTokenObj = {
+      grant_type: 'refresh_token',
+      refresh_token: this.withingsAccount.refresh_token,
+      client_secret: process.env.WITHINGS_API_SECRET,
+      ...basicSignature,
+    };
+    return this.requestApi('https://wbsapi.withings.net/v2/oauth2', requestTokenObj);
+  }
+
+  private async requestApi(url: string, requestParams: { [s: string]: any }): Promise<AxiosResponse<any, any>> {
+    const expiredAt = new Date(this.withingsAccount.expired_at);
+    const now = new Date();
+    if (now > expiredAt) {
+      const refreshTokenResponse = await this.requestRefreshAccessToken();
+      const responseBody = refreshTokenResponse.data.body;
+      const nowTime = new Date().getTime();
+      await saveWithingsAccountToFirebase({
+        ...this.withingsAccount,
+        access_token: responseBody.access_token,
+        refresh_token: responseBody.refresh_token,
+        expired_at: nowTime + responseBody.expires_in * 1000,
+      });
+    }
+    return axios.post(url, stringify(requestParams), {
       headers: {
         Authorization: ['Bearer', this.withingsAccount.access_token].join(' '),
       },
     });
-  }
-
-  async requestRefreshAccessToken(refresh_token: string): Promise<AxiosResponse<any, any>> {
-    const basicSignature: RequestTokenSignatureBasic = await constructNonceSignature('requesttoken');
-    const requestTokenObj = {
-      grant_type: 'refresh_token',
-      refresh_token: refresh_token,
-      client_secret: process.env.WITHINGS_API_SECRET,
-      ...basicSignature,
-    };
-    return axios.post('https://wbsapi.withings.net/v2/oauth2', stringify(requestTokenObj));
   }
 }
 
@@ -59,6 +74,12 @@ export async function requestGetAccessToken(oauthCallbackCode: string, redirect_
     ...basicSignature,
   };
   return axios.post('https://wbsapi.withings.net/v2/oauth2', stringify(requestTokenObj));
+}
+
+export async function saveWithingsAccountToFirebase(withingsAccount: WithingsAccount): Promise<void> {
+  const firestore = setupFireStore();
+  const currentDoc = firestore.collection(withingsUsersCollectionName).doc(withingsAccount.withings_user_id);
+  await currentDoc.set(withingsAccount);
 }
 
 async function constructNonceSignature(action: string): Promise<RequestTokenSignatureBasic> {

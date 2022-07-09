@@ -1,7 +1,7 @@
 import { stringifyUrl } from 'query-string';
 import { WithingsAccount } from '../../interfaces/withings';
 import { setupFireStore } from '../../common/firestore';
-import { requestGetAccessToken, WithingsApi } from '../../common/withings';
+import { requestGetAccessToken, WithingsApi, saveWithingsAccountToFirebase } from '../../common/withings';
 import { linebotUrl } from '../../types/line';
 import { withingsUsersCollectionName } from '../../types/withings';
 
@@ -58,6 +58,7 @@ export async function withingsAuthRouter(app, opts): Promise<void> {
     const nowTime = new Date().getTime();
     const oauthResultBody = oauthRes.data.body;
     const withingsAccount: WithingsAccount = {
+      withings_user_id: oauthResultBody.userid,
       access_token: oauthResultBody.access_token,
       refresh_token: oauthResultBody.refresh_token,
       expired_at: nowTime + oauthResultBody.expires_in * 1000,
@@ -71,9 +72,19 @@ export async function withingsAuthRouter(app, opts): Promise<void> {
     console.log(registedWithings.data);
     // firestore の保存はredirectさせたあとにしておかないとInternal server errorになっちゃう
     res.redirect(linebotUrl);
+    await saveWithingsAccountToFirebase(withingsAccount);
+  });
+  app.get('/refresh_token', async (req, res) => {
+    if (!req.query.withing_user_id) {
+      return { message: 'withings_user_idを指定してください' };
+    }
     const firestore = setupFireStore();
-    const currentDoc = firestore.collection(withingsUsersCollectionName).doc(oauthResultBody.userid);
-    await currentDoc.set(withingsAccount);
+    const withingsUserDoc = firestore.collection(withingsUsersCollectionName).doc(req.query.withing_user_id);
+    const withingsUserAccount = await withingsUserDoc.get();
+    const withingsAccount = withingsUserAccount.data() as WithingsAccount;
+    const withingsApi = new WithingsApi(withingsAccount);
+    const registeredNotifyListResponse = await withingsApi.requestRefreshAccessToken();
+    return registeredNotifyListResponse.data;
   });
 }
 

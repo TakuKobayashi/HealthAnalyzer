@@ -6,6 +6,7 @@ export interface RequestTokenSignatureBasic {
 }
 
 export interface WithingsAccount {
+  withings_user_id: string;
   access_token: string;
   refresh_token: string;
   expired_at: number;

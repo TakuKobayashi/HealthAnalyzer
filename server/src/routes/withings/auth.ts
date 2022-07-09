@@ -40,10 +40,10 @@ export async function withingsAuthRouter(app, opts): Promise<void> {
       res.redirect(linebotUrl);
       return;
     }
-    // firestore の保存はredirectさせたあとにしておかないとInternal server errorになっちゃう
-    res.redirect(linebotUrl);
     const oauthCallbackCode: string = req.query.code.toString();
+    // firestore の保存はredirectさせたあとにしておかないとInternal server errorになっちゃう
     const redirectUrl = getCallbackUrl(req);
+    const webhookUrl = getWebhookUrl(req);
     const oauthRes = await requestGetAccessToken(oauthCallbackCode, redirectUrl);
     // このような形で返ってくる
     /* {
@@ -64,14 +64,15 @@ export async function withingsAuthRouter(app, opts): Promise<void> {
       access_token: oauthResultBody.access_token,
       refresh_token: oauthResultBody.refresh_token,
       expired_at: nowTime + oauthResultBody.expires_in * 1000,
-      line_user_id: req.cookies[lineUserIdCookieKeyName],
+      line_user_id: req.query.state || req.cookies[lineUserIdCookieKeyName],
     };
+    await saveWithingsAccountToFirebase(withingsAccount);
     const withingsApi = new WithingsApi(withingsAccount);
     await withingsApi.requestRegisterWebhook(
-      getWebhookUrl(req),
+      webhookUrl,
       ['LineId', withingsAccount.line_user_id, 'WithingsId', oauthResultBody.userid].join(':'),
     );
-    await saveWithingsAccountToFirebase(withingsAccount);
+    res.redirect(linebotUrl);
   });
   app.get('/refresh_token', async (req, res) => {
     if (!req.query.withing_user_id) {

@@ -12,14 +12,14 @@ export async function withingsWebhookRouter(app, opts): Promise<void> {
   });
   app.get('/registerings', async (req, res) => {
     if (!req.query.withing_user_id) {
-      return {message: 'withings_user_idをしいていしてください'};
+      return { message: 'withings_user_idを指定してください' };
     }
     const firestore = setupFireStore();
     const withingsUserDoc = firestore.collection(withingsUsersCollectionName).doc(req.query.withing_user_id);
-    const withingsUserAccount = await withingsUserDoc.get()
+    const withingsUserAccount = await withingsUserDoc.get();
     const withingsAccount = withingsUserAccount.data() as WithingsAccount;
     const withingsApi = new WithingsApi(withingsAccount);
-    const registeredNotifyListResponse = await withingsApi.requestRegisteredNotifyList()
+    const registeredNotifyListResponse = await withingsApi.requestRegisteredNotifyList();
     return registeredNotifyListResponse.data;
   });
   app.post('/recieves', async (req, res) => {

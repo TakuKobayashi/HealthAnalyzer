@@ -13,9 +13,9 @@ export async function withingsAuthRouter(app, opts): Promise<void> {
     const currentDoc = firestore.collection(withingsUsersCollectionName);
     const data = await currentDoc.get();
     const arr = [];
-    data.forEach(d => {
+    data.forEach((d) => {
       arr.push(d.data());
-    })
+    });
     return arr;
   });
   app.get('/login', async (req, res) => {
@@ -64,9 +64,12 @@ export async function withingsAuthRouter(app, opts): Promise<void> {
       line_user_id: req.cookies[lineUserIdCookieKeyName],
     };
     const withingsApi = new WithingsApi(withingsAccount);
-    const registedWithings = await withingsApi.requestRegisterWebhook(getWebhookUrl(req), ["LineId", withingsAccount.line_user_id, "WithingsId", oauthResultBody.userid].join(":"))
+    const registedWithings = await withingsApi.requestRegisterWebhook(
+      getWebhookUrl(req),
+      ['LineId', withingsAccount.line_user_id, 'WithingsId', oauthResultBody.userid].join(':'),
+    );
     console.log(registedWithings.data);
-     // firestore の保存はredirectさせたあとにしておかないとInternal server errorになっちゃう
+    // firestore の保存はredirectさせたあとにしておかないとInternal server errorになっちゃう
     res.redirect(linebotUrl);
     const firestore = setupFireStore();
     const currentDoc = firestore.collection(withingsUsersCollectionName).doc(oauthResultBody.userid);

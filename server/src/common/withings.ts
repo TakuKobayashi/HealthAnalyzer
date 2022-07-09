@@ -32,7 +32,7 @@ export class WithingsApi {
     };
     return axios.post('https://wbsapi.withings.net/notify', stringify(requestParams), {
       headers: {
-        Authorization: ['Bearer',  this.withingsAccount.access_token].join(' '),
+        Authorization: ['Bearer', this.withingsAccount.access_token].join(' '),
       },
     });
   }

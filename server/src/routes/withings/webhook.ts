@@ -2,6 +2,7 @@ import { setupFireStore } from '../../common/firestore';
 import { WithingsAccount } from '../../interfaces/withings';
 import { WithingsApi } from '../../common/withings';
 import { withingsUsersCollectionName } from '../../types/withings';
+import { parse } from 'query-string';
 
 export async function withingsWebhookRouter(app, opts): Promise<void> {
   app.get('/', async (req, res) => {

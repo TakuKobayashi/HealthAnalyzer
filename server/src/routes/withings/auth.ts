@@ -55,6 +55,8 @@ export async function withingsAuthRouter(app, opts): Promise<void> {
         "token_type":"Bearer"
       }
     } */
+    // firestore の保存はredirectさせたあとにしておかないとInternal server errorになっちゃう
+    res.redirect(linebotUrl);
     const nowTime = new Date().getTime();
     const oauthResultBody = oauthRes.data.body;
     const withingsAccount: WithingsAccount = {
@@ -65,13 +67,10 @@ export async function withingsAuthRouter(app, opts): Promise<void> {
       line_user_id: req.cookies[lineUserIdCookieKeyName],
     };
     const withingsApi = new WithingsApi(withingsAccount);
-    const registedWithings = await withingsApi.requestRegisterWebhook(
+    await withingsApi.requestRegisterWebhook(
       getWebhookUrl(req),
       ['LineId', withingsAccount.line_user_id, 'WithingsId', oauthResultBody.userid].join(':'),
     );
-    console.log(registedWithings.data);
-    // firestore の保存はredirectさせたあとにしておかないとInternal server errorになっちゃう
-    res.redirect(linebotUrl);
     await saveWithingsAccountToFirebase(withingsAccount);
   });
   app.get('/refresh_token', async (req, res) => {

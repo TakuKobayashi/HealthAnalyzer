@@ -31,6 +31,13 @@ export class WithingsApi {
     return this.requestApi('https://wbsapi.withings.net/notify', requestParams);
   }
 
+  async requestMesures(): Promise<AxiosResponse<any, any>> {
+    const requestParams = {
+      action: 'getmeas'
+    };
+    return this.requestApi('https://wbsapi.withings.net/measure', requestParams);
+  }
+
   async requestRefreshAccessToken(): Promise<AxiosResponse<any, any>> {
     const basicSignature: RequestTokenSignatureBasic = await constructNonceSignature('requesttoken');
     const requestTokenObj = {

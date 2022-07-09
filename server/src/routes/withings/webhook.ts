@@ -1,32 +1,26 @@
 import axios, { AxiosResponse } from 'axios';
 import { stringify, parse } from 'query-string';
 import { createHmac } from 'crypto';
-import { RequestTokenSignatureBasic } from '../../interfaces/withings';
+import { setupFireStore } from '../../common/firestore';
+import { RequestTokenSignatureBasic, WithingsAccount } from '../../interfaces/withings';
+import { WithingsApi } from '../../common/withings';
+import { withingsUsersCollectionName } from '../../types/withings';
 
 export async function withingsWebhookRouter(app, opts): Promise<void> {
   app.get('/', async (req, res) => {
     return { message: 'hello' };
   });
   app.get('/registerings', async (req, res) => {
-    if (!req.query.accesstoken && !req.query.refreshtoken) {
-      res.send('accesstokenかrefreshtokenをクエリにいれてください...');
-      return;
+    if (!req.query.withing_user_id) {
+      return {message: 'withings_user_idをしいていしてください'};
     }
-    let accessToken = req.query.accesstoken;
-    if (req.query.refreshtoken) {
-      const tokenRes = await requestRefreshAccessToken(req.query.refreshtoken.toString());
-      accessToken = tokenRes.data.body.access_token;
-    }
-    const requestParams = {
-      action: 'list',
-    };
-    const getRes = await axios.post('https://wbsapi.withings.net/notify', stringify(requestParams), {
-      headers: {
-        Authorization: ['Bearer', accessToken].join(' '),
-      },
-    });
-    //{ status: 0, body: { profiles: [] } }
-    return getRes.data;
+    const firestore = setupFireStore();
+    const withingsUserDoc = firestore.collection(withingsUsersCollectionName).doc(req.query.withing_user_id);
+    const withingsUserAccount = await withingsUserDoc.get()
+    const withingsAccount = withingsUserAccount.data() as WithingsAccount;
+    const withingsApi = new WithingsApi(withingsAccount);
+    const registeredNotifyListResponse = await withingsApi.requestRegisteredNotifyList()
+    return registeredNotifyListResponse.data;
   });
   app.post('/recieves', async (req, res) => {
     console.log(req.body);

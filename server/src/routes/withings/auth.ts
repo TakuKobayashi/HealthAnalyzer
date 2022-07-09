@@ -1,5 +1,5 @@
 import { stringifyUrl } from 'query-string';
-import { WithingsAccount } from 'src/interfaces/withings';
+import { WithingsAccount } from '../../interfaces/withings';
 import { setupFireStore } from '../../common/firestore';
 import { requestGetAccessToken, WithingsApi } from '../../common/withings';
 import { linebotUrl } from '../../types/line';

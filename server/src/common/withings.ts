@@ -26,6 +26,17 @@ export class WithingsApi {
     });
   }
 
+  async requestRegisteredNotifyList(): Promise<AxiosResponse<any, any>> {
+    const requestParams = {
+      action: 'list',
+    };
+    return axios.post('https://wbsapi.withings.net/notify', stringify(requestParams), {
+      headers: {
+        Authorization: ['Bearer',  this.withingsAccount.access_token].join(' '),
+      },
+    });
+  }
+
   async requestRefreshAccessToken(refresh_token: string): Promise<AxiosResponse<any, any>> {
     const basicSignature: RequestTokenSignatureBasic = await constructNonceSignature('requesttoken');
     const requestTokenObj = {

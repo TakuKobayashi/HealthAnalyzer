@@ -72,6 +72,7 @@ export async function withingsAuthRouter(app, opts): Promise<void> {
       webhookUrl,
       ['LineId', withingsAccount.line_user_id, 'WithingsId', oauthResultBody.userid].join(':'),
     );
+    await withingsApi.requestAndSaveLatestMesureData();
     res.redirect(linebotUrl);
   });
   app.get('/refresh_token', async (req, res) => {

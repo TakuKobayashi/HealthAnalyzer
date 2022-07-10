@@ -11,7 +11,8 @@ const serverlessConfiguration: AWS = {
     name: 'aws',
     runtime: 'nodejs14.x',
     region: 'ap-northeast-1',
-    timeout: 300,
+    timeout: 900,
+    memorySize: 128,
     apiGateway: {
       minimumCompressionSize: 1024,
       shouldStartNameWithService: true,

@@ -1,10 +1,11 @@
 import axios, { AxiosResponse } from 'axios';
-import { RequestTokenSignatureBasic, WithingsAccount } from '../interfaces/withings';
+import { RequestTokenSignatureBasic, WithingsAccount, WithingsUserLatestMeasure } from '../interfaces/withings';
 import { stringify } from 'query-string';
 import { createHmac } from 'crypto';
 import { setupFireStore } from './firestore';
-import { withingsUsersCollectionName } from '../types/withings';
+import { withingsUsersCollectionName, withingsUserMeasuresCollectionName } from '../types/withings';
 
+const firestore = setupFireStore();
 export class WithingsApi {
   private withingsAccount: WithingsAccount;
 
@@ -33,9 +34,84 @@ export class WithingsApi {
 
   async requestMesures(): Promise<AxiosResponse<any, any>> {
     const requestParams = {
-      action: 'getmeas'
+      action: 'getmeas',
     };
+    /*
+    こんな感じのデータが返ってくる
+    {
+      "status":0,
+      "body":{
+        "updatetime":1657392298,
+        "timezone":"Asia/Tokyo",
+        "measuregrps":[{
+          "grpid":3713205203,
+          "attrib":0,
+          "date":1657391187,
+          "created":1657391229,
+          "modified":1657391229,
+          "category":1,
+          "deviceid":"...",
+          "hash_deviceid":"...",
+          "measures":[
+            {"value":103800,"type":1,"unit":-3,"algo":3,"fm":5}, //体重
+            {"value":3659,"type":8,"unit":-2,"algo":3,"fm":5}, // 体脂肪量
+            {"value":6360,"type":76,"unit":-2,"algo":3,"fm":5}, // 筋肉量
+            {"value":5240,"type":77,"unit":-2,"algo":3,"fm":5}, // 体内水分量
+            {"value":360,"type":88,"unit":-2,"algo":3,"fm":5}, // 骨量
+            {"value":35250,"type":6,"unit":-3}, // 肥満率
+            {"value":67210,"type":5,"unit":-3}, // 除脂肪体重
+          ],
+          "comment":null
+        },
+        ...
+        ],
+      }
+    }
+    */
     return this.requestApi('https://wbsapi.withings.net/measure', requestParams);
+  }
+
+  async requestAndSaveLatestMesureData(): Promise<any> {
+    const mesureResponse = await this.requestMesures();
+    const measuregrps = mesureResponse.data.body.measuregrps;
+    const measureObj: Partial<WithingsUserLatestMeasure> = {
+      withing_user_id: this.withingsAccount.withings_user_id,
+      created_at: 0,
+    };
+    for (const measuregrp of measuregrps) {
+      if (measureObj.created_at < measuregrp.created) {
+        measureObj.created_at = measuregrp.created;
+        measureObj.date = measuregrp.date;
+        measureObj.updated_at = measuregrp.modified;
+        for (const measure of measuregrp.measures) {
+          // 体重
+          if (measure.type === 1) {
+            measureObj.weight_kg = measure.value * Math.pow(10, measure.unit);
+            // 体脂肪量
+          } else if (measure.type === 8) {
+            measureObj.fat_mass_weight_kg = measure.value * Math.pow(10, measure.unit);
+            // 筋肉量
+          } else if (measure.type === 76) {
+            measureObj.muscle_mass_kg = measure.value * Math.pow(10, measure.unit);
+            // 体内水分量
+          } else if (measure.type === 77) {
+            measureObj.hydration_kg = measure.value * Math.pow(10, measure.unit);
+            // 骨量
+          } else if (measure.type === 88) {
+            measureObj.bone_mass_kg = measure.value * Math.pow(10, measure.unit);
+            // 肥満率
+          } else if (measure.type === 6) {
+            measureObj.fat_ratio_percent = measure.value * Math.pow(10, measure.unit);
+            // 除脂肪体重
+          } else if (measure.type === 5) {
+            measureObj.fat_free_mass_kg = measure.value * Math.pow(10, measure.unit);
+          }
+        }
+      }
+    }
+    const currentDoc = firestore.collection(withingsUserMeasuresCollectionName).doc(this.withingsAccount.withings_user_id);
+    await currentDoc.set(measureObj);
+    return mesureResponse.data.body;
   }
 
   async requestRefreshAccessToken(): Promise<AxiosResponse<any, any>> {
@@ -46,7 +122,11 @@ export class WithingsApi {
       client_secret: process.env.WITHINGS_API_SECRET,
       ...basicSignature,
     };
-    return this.requestApi('https://wbsapi.withings.net/v2/oauth2', requestTokenObj);
+    return axios.post('https://wbsapi.withings.net/v2/oauth2', stringify(requestTokenObj), {
+      headers: {
+        Authorization: ['Bearer', this.withingsAccount.access_token].join(' '),
+      },
+    });
   }
 
   private async requestApi(url: string, requestParams: { [s: string]: any }): Promise<AxiosResponse<any, any>> {
@@ -84,7 +164,6 @@ export async function requestGetAccessToken(oauthCallbackCode: string, redirect_
 }
 
 export async function saveWithingsAccountToFirebase(withingsAccount: WithingsAccount): Promise<void> {
-  const firestore = setupFireStore();
   const currentDoc = firestore.collection(withingsUsersCollectionName).doc(withingsAccount.withings_user_id);
   await currentDoc.set(withingsAccount);
 }

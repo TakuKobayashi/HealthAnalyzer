@@ -17,6 +17,10 @@ export interface WithingsUserLatestMeasure {
   created_at: number;
   date: number;
   updated_at: number;
+  metrics: WithingsHealthMetrics;
+}
+
+export interface WithingsHealthMetrics {
   weight_kg: number;
   fat_mass_weight_kg: number;
   muscle_mass_kg: number;
@@ -50,7 +54,7 @@ interface WithingsMeasuregrp {
   comment: string | null;
 }
 
-interface WithingsMeasure {
+export interface WithingsMeasure {
   value: number;
   type: number;
   unit: number;

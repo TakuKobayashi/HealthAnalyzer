@@ -1,5 +1,12 @@
 import axios, { AxiosResponse } from 'axios';
-import { RequestTokenSignatureBasic, WithingsAccount, WithingsUserLatestMeasure, WithingsMeasureApiResult } from '../interfaces/withings';
+import {
+  RequestTokenSignatureBasic,
+  WithingsAccount,
+  WithingsUserLatestMeasure,
+  WithingsMeasureApiResult,
+  WithingsMeasure,
+  WithingsHealthMetrics,
+} from '../interfaces/withings';
 import { stringify } from 'query-string';
 import { createHmac } from 'crypto';
 import { setupFireStore } from './firestore';
@@ -83,30 +90,7 @@ export class WithingsApi {
         measureObj.created_at = measuregrp.created;
         measureObj.date = measuregrp.date;
         measureObj.updated_at = measuregrp.modified;
-        for (const measure of measuregrp.measures) {
-          // 体重
-          if (measure.type === 1) {
-            measureObj.weight_kg = measure.value * Math.pow(10, measure.unit);
-            // 体脂肪量
-          } else if (measure.type === 8) {
-            measureObj.fat_mass_weight_kg = measure.value * Math.pow(10, measure.unit);
-            // 筋肉量
-          } else if (measure.type === 76) {
-            measureObj.muscle_mass_kg = measure.value * Math.pow(10, measure.unit);
-            // 体内水分量
-          } else if (measure.type === 77) {
-            measureObj.hydration_kg = measure.value * Math.pow(10, measure.unit);
-            // 骨量
-          } else if (measure.type === 88) {
-            measureObj.bone_mass_kg = measure.value * Math.pow(10, measure.unit);
-            // 肥満率
-          } else if (measure.type === 6) {
-            measureObj.fat_ratio_percent = measure.value * Math.pow(10, measure.unit);
-            // 除脂肪体重
-          } else if (measure.type === 5) {
-            measureObj.fat_free_mass_kg = measure.value * Math.pow(10, measure.unit);
-          }
-        }
+        measureObj.metrics = this.convertMetrics(measuregrp.measures);
       }
     }
     const currentDoc = firestore.collection(withingsUserMeasuresCollectionName).doc(this.withingsAccount.withings_user_id);
@@ -127,6 +111,43 @@ export class WithingsApi {
         Authorization: ['Bearer', this.withingsAccount.access_token].join(' '),
       },
     });
+  }
+
+  private convertMetrics(measures: WithingsMeasure[]): WithingsHealthMetrics {
+    const metrics: WithingsHealthMetrics = {
+      weight_kg: 0,
+      fat_mass_weight_kg: 0,
+      muscle_mass_kg: 0,
+      hydration_kg: 0,
+      bone_mass_kg: 0,
+      fat_ratio_percent: 0,
+      fat_free_mass_kg: 0,
+    };
+    for (const measure of measures) {
+      // 体重
+      if (measure.type === 1) {
+        metrics.weight_kg = measure.value * Math.pow(10, measure.unit);
+        // 体脂肪量
+      } else if (measure.type === 8) {
+        metrics.fat_mass_weight_kg = measure.value * Math.pow(10, measure.unit);
+        // 筋肉量
+      } else if (measure.type === 76) {
+        metrics.muscle_mass_kg = measure.value * Math.pow(10, measure.unit);
+        // 体内水分量
+      } else if (measure.type === 77) {
+        metrics.hydration_kg = measure.value * Math.pow(10, measure.unit);
+        // 骨量
+      } else if (measure.type === 88) {
+        metrics.bone_mass_kg = measure.value * Math.pow(10, measure.unit);
+        // 肥満率
+      } else if (measure.type === 6) {
+        metrics.fat_ratio_percent = measure.value * Math.pow(10, measure.unit);
+        // 除脂肪体重
+      } else if (measure.type === 5) {
+        metrics.fat_free_mass_kg = measure.value * Math.pow(10, measure.unit);
+      }
+    }
+    return metrics;
   }
 
   private async requestApi<T>(url: string, requestParams: { [s: string]: any }): Promise<AxiosResponse<T, any>> {

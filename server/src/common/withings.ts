@@ -1,5 +1,5 @@
 import axios, { AxiosResponse } from 'axios';
-import { RequestTokenSignatureBasic, WithingsAccount, WithingsUserLatestMeasure } from '../interfaces/withings';
+import { RequestTokenSignatureBasic, WithingsAccount, WithingsUserLatestMeasure, WithingsMeasureApiResult } from '../interfaces/withings';
 import { stringify } from 'query-string';
 import { createHmac } from 'crypto';
 import { setupFireStore } from './firestore';
@@ -22,17 +22,17 @@ export class WithingsApi {
       comment: comment,
       ...basicSignature,
     };
-    return this.requestApi('https://wbsapi.withings.net/notify', requestParams);
+    return this.requestApi<any>('https://wbsapi.withings.net/notify', requestParams);
   }
 
   async requestRegisteredNotifyList(): Promise<AxiosResponse<any, any>> {
     const requestParams = {
       action: 'list',
     };
-    return this.requestApi('https://wbsapi.withings.net/notify', requestParams);
+    return this.requestApi<any>('https://wbsapi.withings.net/notify', requestParams);
   }
 
-  async requestMesures(): Promise<AxiosResponse<any, any>> {
+  async requestMesures(): Promise<AxiosResponse<WithingsMeasureApiResult, any>> {
     const requestParams = {
       action: 'getmeas',
     };
@@ -68,10 +68,10 @@ export class WithingsApi {
       }
     }
     */
-    return this.requestApi('https://wbsapi.withings.net/measure', requestParams);
+    return this.requestApi<WithingsMeasureApiResult>('https://wbsapi.withings.net/measure', requestParams);
   }
 
-  async requestAndSaveLatestMesureData(): Promise<any> {
+  async requestAndSaveLatestMesureData(): Promise<WithingsMeasureApiResult> {
     const mesureResponse = await this.requestMesures();
     const measuregrps = mesureResponse.data.body.measuregrps;
     const measureObj: Partial<WithingsUserLatestMeasure> = {
@@ -111,7 +111,7 @@ export class WithingsApi {
     }
     const currentDoc = firestore.collection(withingsUserMeasuresCollectionName).doc(this.withingsAccount.withings_user_id);
     await currentDoc.set(measureObj);
-    return mesureResponse.data.body;
+    return mesureResponse.data;
   }
 
   async requestRefreshAccessToken(): Promise<AxiosResponse<any, any>> {
@@ -129,7 +129,7 @@ export class WithingsApi {
     });
   }
 
-  private async requestApi(url: string, requestParams: { [s: string]: any }): Promise<AxiosResponse<any, any>> {
+  private async requestApi<T>(url: string, requestParams: { [s: string]: any }): Promise<AxiosResponse<T, any>> {
     const expiredAt = new Date(this.withingsAccount.expired_at);
     const now = new Date();
     if (now > expiredAt) {

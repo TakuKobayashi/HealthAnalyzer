@@ -25,3 +25,36 @@ export interface WithingsUserLatestMeasure {
   fat_ratio_percent: number;
   fat_free_mass_kg: number;
 }
+
+export interface WithingsMeasureApiResult {
+  status: number;
+  body: WithingsMeasureApiResultBody;
+}
+
+interface WithingsMeasureApiResultBody {
+  updatetime: number;
+  timezone: string;
+  measuregrps: WithingsMeasuregrp[];
+}
+
+interface WithingsMeasuregrp {
+  grpid: number;
+  attrib: number;
+  date: number;
+  created: number;
+  modified: number;
+  category: number;
+  deviceid: string;
+  hash_deviceid: string;
+  measures: WithingsMeasure[];
+  comment: string | null;
+}
+
+interface WithingsMeasure {
+  value: number;
+  type: number;
+  unit: number;
+  algo: number | undefined;
+  fm: number | undefined;
+  [key: string]: any;
+}

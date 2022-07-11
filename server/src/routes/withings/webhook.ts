@@ -41,10 +41,13 @@ export async function withingsWebhookRouter(app, opts): Promise<void> {
     }
     */
     const payload = parse(req.body);
-    console.log(payload);
-    const withingsApi = await constructWithingsApi(payload.userid.toString());
-    const mesureBodyData = await withingsApi.requestAndSaveLatestMesureData();
-    return mesureBodyData;
+    if (payload) {
+      const withingsApi = await constructWithingsApi(payload.userid.toString());
+      const mesureBodyData = await withingsApi.requestAndSaveLatestMesureData();
+      return mesureBodyData;
+    } else {
+      return { message: 'request body is none' };
+    }
   });
 }
 

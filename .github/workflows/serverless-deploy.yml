@@ -11,6 +11,7 @@ jobs:
     strategy:
       matrix:
         node-version: [14.x]
+        project-root-path: [./server]
     steps:
     - uses: actions/checkout@v3
     - name: setup ubuntu
@@ -20,7 +21,7 @@ jobs:
       with:
         node-version: ${{ matrix.node-version }}
     - name: Register .env
-      working-directory: ./server
+      working-directory: ${{ matrix.project-root-path }}
       env:
         WITHINGS_API_CLIENT_ID: ${{ secrets.WITHINGS_API_CLIENT_ID }}
         WITHINGS_API_SECRET: ${{ secrets.WITHINGS_API_SECRET }}
@@ -29,8 +30,6 @@ jobs:
         LINE_BOT_CHANNEL_SECRET: ${{ secrets.LINE_BOT_CHANNEL_SECRET }}
         LINE_NOTIFY_CLIENT_ID: ${{ secrets.LINE_NOTIFY_CLIENT_ID }}
         LINE_NOTIFY_CLIENT_SECRET: ${{ secrets.LINE_NOTIFY_CLIENT_SECRET }}
-        KINTONE_USERNAME: ${{ secrets.KINTONE_USERNAME }}
-        KINTONE_PASSWORD: ${{ secrets.KINTONE_PASSWORD }}
       run: |
         echo "WITHINGS_API_CLIENT_ID=${WITHINGS_API_CLIENT_ID}" >> ./.env
         echo "WITHINGS_API_SECRET=${WITHINGS_API_SECRET}" >> ./.env
@@ -40,16 +39,16 @@ jobs:
         echo "LINE_NOTIFY_CLIENT_ID=${LINE_NOTIFY_CLIENT_ID}" >> ./.env
         echo "LINE_NOTIFY_CLIENT_SECRET=${LINE_NOTIFY_CLIENT_SECRET}" >> ./.env
     - name: Register firebaseConfig.json
-      working-directory: ./server
+      working-directory: ${{ matrix.project-root-path }}
       env:
         FIREBASE_CONFIG: ${{ secrets.FIREBASE_CONFIG }}
       run: |
         echo "${FIREBASE_CONFIG}" >> ./firebaseConfig.json
     - name: yarn install
-      working-directory: ./server
+      working-directory: ${{ matrix.project-root-path }}
       run: yarn install
     - name: serverless package and deploy
-      working-directory: ./server
+      working-directory: ${{ matrix.project-root-path }}
       env:
         AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
         AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}

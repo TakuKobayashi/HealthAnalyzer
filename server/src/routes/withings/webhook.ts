@@ -40,8 +40,8 @@ export async function withingsWebhookRouter(app, opts): Promise<void> {
       appli: '1'
     }
     */
-    const payload = parse(req.body);
-    if (payload) {
+    if (req.body) {
+      const payload = parse(req.body);
       const withingsApi = await constructWithingsApi(payload.userid.toString());
       const mesureBodyData = await withingsApi.requestAndSaveLatestMesureData();
       return mesureBodyData;

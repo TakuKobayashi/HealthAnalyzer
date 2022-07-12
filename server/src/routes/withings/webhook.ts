@@ -1,8 +1,10 @@
 import { setupFireStore } from '../../common/firestore';
-import { WithingsAccount } from '../../interfaces/withings';
+import { WithingsAccount, WithingsUserLatestMeasure } from '../../interfaces/withings';
 import { WithingsApi } from '../../common/withings';
-import { withingsUsersCollectionName } from '../../types/withings';
+import { withingsUsersCollectionName, withingsUserMeasuresCollectionName } from '../../types/withings';
+import { lineBotClient } from '../../types/line';
 import { parse } from 'query-string';
+import { TextMessage } from '@line/bot-sdk';
 
 const firestore = setupFireStore();
 
@@ -31,6 +33,8 @@ export async function withingsWebhookRouter(app, opts): Promise<void> {
     console.log(req.headers);
     console.log(req.raw);
     console.log(req.body);
+    console.log(req.query);
+    console.log(req.params);
     /*
     これをparseしてこうする
     {
@@ -44,6 +48,18 @@ export async function withingsWebhookRouter(app, opts): Promise<void> {
       const payload = parse(req.body);
       const withingsApi = await constructWithingsApi(payload.userid.toString());
       const mesureBodyData = await withingsApi.requestAndSaveLatestMesureData();
+      const withingsAccount = withingsApi.getWithingsAccount();
+      const withingsLatestMesure = await firestore
+        .collection(withingsUserMeasuresCollectionName)
+        .doc(withingsAccount.withings_user_id)
+        .get();
+      const latestData = withingsLatestMesure.data() as WithingsUserLatestMeasure;
+      const message: TextMessage = {
+        type: 'text',
+        text: buildLinePushMessage(latestData),
+      };
+      const pushResult = await lineBotClient.pushMessage(withingsAccount.line_user_id, message);
+      console.log(pushResult);
       return mesureBodyData;
     } else {
       return { message: 'request body is none' };
@@ -56,4 +72,22 @@ async function constructWithingsApi(withing_user_id: string): Promise<WithingsAp
   const withingsUserAccount = await withingsUserDoc.get();
   const withingsAccount = withingsUserAccount.data() as WithingsAccount;
   return new WithingsApi(withingsAccount);
+}
+
+function buildLinePushMessage(latestData: WithingsUserLatestMeasure): string {
+  const createdAt = new Date(latestData.created_at);
+  return [
+    [
+      `${createdAt.getFullYear()}年${createdAt.getMonth() + 1}月${createdAt.getDate()}日`,
+      `${createdAt.getHours()}:${createdAt.getMinutes()}`,
+      `の計測結果`,
+    ].join(' '),
+    `体重:${latestData.metrics.weight_kg}kg`,
+    `体脂肪量:${latestData.metrics.fat_mass_weight_kg}kg`,
+    `筋肉量:${latestData.metrics.muscle_mass_kg}kg`,
+    `体内水分量:${latestData.metrics.hydration_kg}kg`,
+    `骨量:${latestData.metrics.bone_mass_kg}kg`,
+    `肥満率:${latestData.metrics.fat_ratio_percent}kg`,
+    `除脂肪体重:${latestData.metrics.fat_free_mass_kg}kg`,
+  ].join('\n');
 }

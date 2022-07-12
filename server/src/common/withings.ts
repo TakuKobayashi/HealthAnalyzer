@@ -20,6 +20,10 @@ export class WithingsApi {
     this.withingsAccount = account;
   }
 
+  public getWithingsAccount(): WithingsAccount {
+    return this.withingsAccount;
+  }
+
   async requestRegisterWebhook(webhookUrl: string, comment: string): Promise<AxiosResponse<any, any>> {
     const basicSignature: RequestTokenSignatureBasic = await constructNonceSignature('subscribe');
     const requestParams = {
@@ -80,7 +84,7 @@ export class WithingsApi {
 
   async requestAndSaveLatestMesureData(): Promise<WithingsMeasureApiResult> {
     const mesureResponse = await this.requestMesures();
-    const measuregrps = mesureResponse.data.body.measuregrps;
+    const measuregrps = mesureResponse.data.body.measuregrps || [];
     const measureObj: Partial<WithingsUserLatestMeasure> = {
       withing_user_id: this.withingsAccount.withings_user_id,
       created_at: 0,

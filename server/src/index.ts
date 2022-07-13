@@ -9,6 +9,7 @@ import { withingsWebhookRouter } from './routes/withings/webhook';
 
 const app = fastify();
 app.register(fastifyCookie);
+app.removeAllContentTypeParsers()
 
 app.get('/', (request, reply) => {
   reply.send({ hello: 'world' });

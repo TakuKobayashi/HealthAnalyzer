@@ -1,7 +1,7 @@
 import awsLambdaFastify from '@fastify/aws-lambda';
 import fastify from 'fastify';
 import fastifyCookie from '@fastify/cookie';
-import fastifyCors from '@fastify/cors';
+import fastifyFormbody from 'fastify-formbody';
 
 import { lineBotRouter } from './routes/line/bot';
 import { lineNotifyRouter } from './routes/line/notify';
@@ -9,7 +9,7 @@ import { withingsAuthRouter } from './routes/withings/auth';
 import { withingsWebhookRouter } from './routes/withings/webhook';
 
 const app = fastify();
-app.register(fastifyCors);
+app.register(fastifyFormbody);
 app.register(fastifyCookie);
 app.removeAllContentTypeParsers();
 

@@ -8,10 +8,9 @@ import { lineNotifyRouter } from './routes/line/notify';
 import { withingsAuthRouter } from './routes/withings/auth';
 import { withingsWebhookRouter } from './routes/withings/webhook';
 
-const app = fastify();
+const app = fastify({ logger: true });
 app.register(fastifyFormbody);
 app.register(fastifyCookie);
-app.removeAllContentTypeParsers();
 
 app.get('/', (request, reply) => {
   reply.send({ hello: 'world' });

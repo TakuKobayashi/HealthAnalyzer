@@ -1,6 +1,7 @@
 import awsLambdaFastify from '@fastify/aws-lambda';
 import fastify from 'fastify';
 import fastifyCookie from '@fastify/cookie';
+import fastifyCors from '@fastify/cors';
 
 import { lineBotRouter } from './routes/line/bot';
 import { lineNotifyRouter } from './routes/line/notify';
@@ -8,8 +9,9 @@ import { withingsAuthRouter } from './routes/withings/auth';
 import { withingsWebhookRouter } from './routes/withings/webhook';
 
 const app = fastify();
+app.register(fastifyCors);
 app.register(fastifyCookie);
-app.removeAllContentTypeParsers()
+app.removeAllContentTypeParsers();
 
 app.get('/', (request, reply) => {
   reply.send({ hello: 'world' });

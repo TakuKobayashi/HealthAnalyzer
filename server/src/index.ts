@@ -1,7 +1,7 @@
 import awsLambdaFastify from '@fastify/aws-lambda';
 import fastify from 'fastify';
 import fastifyCookie from '@fastify/cookie';
-import fastifyFormbody from 'fastify-formbody';
+import fastifyFormbody from '@fastify/formbody';
 
 import { lineBotRouter } from './routes/line/bot';
 import { lineNotifyRouter } from './routes/line/notify';

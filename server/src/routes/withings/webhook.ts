@@ -29,21 +29,7 @@ export async function withingsWebhookRouter(app, opts): Promise<void> {
     return mesureBodyData;
   });
   app.post('/recieves', async (request, res) => {
-    console.log('recieved!!!!');
     console.log(request.body);
-    console.log(request.query);
-    console.log(request.params);
-    console.log(request.headers);
-    console.log(request.raw);
-    console.log(request.server);
-    console.log(request.id);
-    console.log(request.ip);
-    console.log(request.ips);
-    console.log(request.hostname);
-    console.log(request.protocol);
-    console.log(request.url);
-    console.log(request.routerMethod);
-    console.log(request.routerPath);
     /*
     これをparseしてこうする
     {
@@ -55,6 +41,7 @@ export async function withingsWebhookRouter(app, opts): Promise<void> {
     */
     if (request.body) {
       const payload = parse(request.body);
+      console.log(payload);
       const withingsApi = await constructWithingsApi(payload.userid.toString());
       const mesureBodyData = await withingsApi.requestAndSaveLatestMesureData();
       const withingsAccount = withingsApi.getWithingsAccount();
@@ -67,6 +54,7 @@ export async function withingsWebhookRouter(app, opts): Promise<void> {
         type: 'text',
         text: buildLinePushMessage(latestData),
       };
+      console.log(message);
       const pushResult = await lineBotClient.pushMessage(withingsAccount.line_user_id, message);
       console.log(pushResult);
       return mesureBodyData;

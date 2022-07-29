@@ -42,21 +42,27 @@ export async function withingsWebhookRouter(app, opts): Promise<void> {
     if (request.body) {
       const payload = parse(request.body);
       console.log(payload);
+      console.log(payload.userid);
       const withingsApi = await constructWithingsApi(payload.userid.toString());
+      console.log(withingsApi.getWithingsAccount());
       const mesureBodyData = await withingsApi.requestAndSaveLatestMesureData();
+      console.log("mesure!!");
       const withingsAccount = withingsApi.getWithingsAccount();
       const withingsLatestMesure = await firestore
         .collection(withingsUserMeasuresCollectionName)
         .doc(withingsAccount.withings_user_id)
         .get();
       const latestData = withingsLatestMesure.data() as WithingsUserLatestMeasure;
+      console.log(latestData);
       const message: TextMessage = {
         type: 'text',
         text: buildLinePushMessage(latestData),
       };
       console.log(message);
+      console.log("message!!");
       const pushResult = await lineBotClient.pushMessage(withingsAccount.line_user_id, message);
       console.log(pushResult);
+      console.log("pushed!!");
       return mesureBodyData;
     } else {
       return { message: 'request body is none' };

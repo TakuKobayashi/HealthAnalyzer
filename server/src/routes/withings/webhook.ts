@@ -42,6 +42,7 @@ export async function withingsWebhookRouter(app, opts): Promise<void> {
     if (request.body) {
       const payload = parse(request.body);
       console.log(payload);
+      console.log("payload!!");
       console.log(payload.userid);
       const withingsApi = await constructWithingsApi(payload.userid.toString());
       console.log(withingsApi.getWithingsAccount());

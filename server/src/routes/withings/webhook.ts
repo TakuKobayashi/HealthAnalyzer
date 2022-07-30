@@ -40,7 +40,8 @@ export async function withingsWebhookRouter(app, opts): Promise<void> {
     }
     */
     if (request.body) {
-      const payload = parse(request.body);
+      const payload = request.body;
+      console.log(parse(request.body));
       console.log(payload);
       console.log("payload!!");
       console.log(payload.userid);

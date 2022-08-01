@@ -3,7 +3,6 @@ import { WithingsAccount, WithingsUserLatestMeasure } from '../../interfaces/wit
 import { WithingsApi } from '../../common/withings';
 import { withingsUsersCollectionName, withingsUserMeasuresCollectionName } from '../../types/withings';
 import { lineBotClient } from '../../types/line';
-import { parse } from 'query-string';
 import { TextMessage } from '@line/bot-sdk';
 
 const firestore = setupFireStore();
@@ -41,30 +40,19 @@ export async function withingsWebhookRouter(app, opts): Promise<void> {
     */
     if (request.body) {
       const payload = request.body;
-      console.log(parse(request.body));
-      console.log(payload);
-      console.log("payload!!");
-      console.log(payload.userid);
       const withingsApi = await constructWithingsApi(payload.userid.toString());
-      console.log(withingsApi.getWithingsAccount());
       const mesureBodyData = await withingsApi.requestAndSaveLatestMesureData();
-      console.log("mesure!!");
       const withingsAccount = withingsApi.getWithingsAccount();
       const withingsLatestMesure = await firestore
         .collection(withingsUserMeasuresCollectionName)
         .doc(withingsAccount.withings_user_id)
         .get();
       const latestData = withingsLatestMesure.data() as WithingsUserLatestMeasure;
-      console.log(latestData);
       const message: TextMessage = {
         type: 'text',
         text: buildLinePushMessage(latestData),
       };
-      console.log(message);
-      console.log("message!!");
-      const pushResult = await lineBotClient.pushMessage(withingsAccount.line_user_id, message);
-      console.log(pushResult);
-      console.log("pushed!!");
+      await lineBotClient.pushMessage(withingsAccount.line_user_id, message);
       return mesureBodyData;
     } else {
       return { message: 'request body is none' };
@@ -80,7 +68,7 @@ async function constructWithingsApi(withing_user_id: string): Promise<WithingsAp
 }
 
 function buildLinePushMessage(latestData: WithingsUserLatestMeasure): string {
-  const createdAt = new Date(latestData.created_at);
+  const createdAt = new Date(latestData.created_at * 1000);
   return [
     [
       `${createdAt.getFullYear()}年${createdAt.getMonth() + 1}月${createdAt.getDate()}日`,

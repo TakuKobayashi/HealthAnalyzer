@@ -4,6 +4,7 @@ import { WithingsApi } from '../../common/withings';
 import { withingsUsersCollectionName, withingsUserMeasuresCollectionName } from '../../types/withings';
 import { lineBotClient } from '../../types/line';
 import { TextMessage } from '@line/bot-sdk';
+const ChartJSImage = require('chart.js-image');
 
 const firestore = setupFireStore();
 
@@ -25,7 +26,70 @@ export async function withingsWebhookRouter(app, opts): Promise<void> {
     }
     const withingsApi = await constructWithingsApi(req.query.withing_user_id);
     const mesureBodyData = await withingsApi.requestAndSaveLatestMesureData();
-    return mesureBodyData;
+
+    const line_chart = ChartJSImage().chart({
+      "type": "line",
+      "data": {
+        "labels": [
+          "January",
+          "February",
+          "March",
+          "April",
+          "May",
+          "June",
+          "July"
+        ],
+        "datasets": [
+          {
+            "label": "My First dataset",
+            "borderColor": "rgb(255,+99,+132)",
+            "backgroundColor": "rgba(255,+99,+132,+.5)",
+            "data": [
+              57,
+              90,
+              11,
+              -15,
+              37,
+              -37,
+              -27
+            ]
+          }
+        ]
+      },
+      "options": {
+        "title": {
+          "display": true,
+          "text": "Chart.js Line Chart"
+        },
+        "scales": {
+          "xAxes": [
+            {
+              "scaleLabel": {
+                "display": true,
+                "labelString": "Month"
+              }
+            }
+          ],
+          "yAxes": [
+            {
+              "stacked": true,
+              "scaleLabel": {
+                "display": true,
+                "labelString": "Value"
+              }
+            }
+          ]
+        }
+      }
+    }) // Line chart
+    .backgroundColor('white')
+    .width(500) // 500px
+    .height(300); // 300px
+    const buffer = await line_chart.toDataURI();
+    res.type('text/html').send(`<img src=\"${buffer}\"/>`);
+//    const buffer = await line_chart.toBuffer();
+//    res.type('image/png').send(buffer.toString('base64'));
+    //return mesureBodyData;
   });
   app.post('/recieves', async (request, res) => {
     console.log(request.body);

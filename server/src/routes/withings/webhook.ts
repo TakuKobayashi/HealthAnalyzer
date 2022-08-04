@@ -40,40 +40,36 @@ export async function withingsWebhookRouter(app, opts): Promise<void> {
     }
 
     const line_chart = ChartJSImage().chart({
-      "type": "line",
-      "data": {
+      type: "line",
+      data: {
         // 273個のデータの表示が限界値
-        "labels": measureObjs.slice(-272).map(measureObj => measureObj.created_at.toLocaleString('ja-JP')),
-        "datasets": [
+        labels: measureObjs.slice(-272).map(measureObj => measureObj.created_at.toLocaleString('ja-JP')),
+        datasets: [
           {
-            "label": "My First dataset",
-            "borderColor": "rgb(255,+99,+132)",
-            "backgroundColor": "rgba(255,+99,+132,+.5)",
+            label: "体重(kg)",
+            borderColor: "rgb(255,+99,+132)",
+            backgroundColor: "rgba(255,+99,+132,+.5)",
             // 273個のデータの表示が限界値
-            "data": measureObjs.slice(-272).map(measureObj => measureObj.weight_kg),
+            data: measureObjs.slice(-272).map(measureObj => measureObj.weight_kg),
           }
         ]
       },
-      "options": {
-        "title": {
-          "display": true,
-          "text": "Chart.js Line Chart"
-        },
-        "scales": {
-          "xAxes": [
+      options: {
+        scales: {
+          xAxes: [
             {
-              "scaleLabel": {
-                "display": true,
-                "labelString": "Month"
+              scaleLabel: {
+                display: true,
+                labelString: "Date"
               }
             }
           ],
-          "yAxes": [
+          yAxes: [
             {
-              "stacked": true,
-              "scaleLabel": {
-                "display": true,
-                "labelString": "Value"
+              stacked: true,
+              scaleLabel: {
+                display: true,
+                labelString: "体重(kg)"
               }
             }
           ]

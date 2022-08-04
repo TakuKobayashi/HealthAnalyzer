@@ -6,11 +6,13 @@ import {
   WithingsMeasureApiResult,
   WithingsMeasure,
   WithingsHealthMetrics,
+  WithingsMeasuregrp,
 } from '../interfaces/withings';
 import { stringify } from 'query-string';
 import { createHmac } from 'crypto';
 import { setupFireStore } from './firestore';
 import { withingsUsersCollectionName, withingsUserMeasuresCollectionName } from '../types/withings';
+const ChartJSImage = require('chart.js-image');
 
 const firestore = setupFireStore();
 export class WithingsApi {
@@ -115,6 +117,61 @@ export class WithingsApi {
         Authorization: ['Bearer', this.withingsAccount.access_token].join(' '),
       },
     });
+  }
+
+  async renderLineChart(measuregrps: WithingsMeasuregrp[]): Promise<any> {
+    const measureObjs = [];
+    for (const measuregrp of measuregrps) {
+      const measure = measuregrp.measures.find((measure) => measure.type === 1);
+      if (measure) {
+        measureObjs.unshift({
+          weight_kg: measure.value * Math.pow(10, measure.unit),
+          created_at: new Date(measuregrp.created * 1000),
+        });
+      }
+    }
+
+    const line_chart = ChartJSImage()
+      .chart({
+        type: 'line',
+        data: {
+          // 273個のデータの表示が限界値
+          labels: measureObjs.slice(-272).map((measureObj) => measureObj.created_at.toLocaleString('ja-JP')),
+          datasets: [
+            {
+              label: '体重(kg)',
+              borderColor: 'rgb(255,+99,+132)',
+              backgroundColor: 'rgba(255,+99,+132,+.5)',
+              // 273個のデータの表示が限界値
+              data: measureObjs.slice(-272).map((measureObj) => measureObj.weight_kg),
+            },
+          ],
+        },
+        options: {
+          scales: {
+            xAxes: [
+              {
+                scaleLabel: {
+                  display: true,
+                  labelString: 'Date',
+                },
+              },
+            ],
+            yAxes: [
+              {
+                scaleLabel: {
+                  display: true,
+                  labelString: '体重(kg)',
+                },
+              },
+            ],
+          },
+        },
+      }) // Line chart
+      .backgroundColor('white')
+      .width(1000) // 500px
+      .height(600); // 300px
+    return line_chart;
   }
 
   private convertMetrics(measures: WithingsMeasure[]): WithingsHealthMetrics {

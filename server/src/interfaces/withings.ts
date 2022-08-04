@@ -41,7 +41,7 @@ interface WithingsMeasureApiResultBody {
   measuregrps: WithingsMeasuregrp[];
 }
 
-interface WithingsMeasuregrp {
+export interface WithingsMeasuregrp {
   grpid: number;
   attrib: number;
   date: number;

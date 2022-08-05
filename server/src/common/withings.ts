@@ -153,12 +153,13 @@ export class WithingsApi {
               {
                 scaleLabel: {
                   display: true,
-                  labelString: 'Date',
+                  labelString: '日時',
                 },
               },
             ],
             yAxes: [
               {
+                stacked: true,
                 scaleLabel: {
                   display: true,
                   labelString: '体重(kg)',

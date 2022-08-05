@@ -30,9 +30,6 @@ export async function withingsWebhookRouter(app, opts): Promise<void> {
     const line_chart = await withingsApi.renderLineChart(measuregrps);
     const buffer = await line_chart.toDataURI();
     res.type('text/html').send(`<img src=\"${buffer}\"/>`);
-    //    const buffer = await line_chart.toBuffer();
-    //    res.type('image/png').send(buffer.toString('base64'));
-    //return mesureBodyData;
   });
   app.post('/recieves', async (request, res) => {
     console.log(request.body);
